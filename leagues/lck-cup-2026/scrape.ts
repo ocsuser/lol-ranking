@@ -156,6 +156,6 @@ const exportData = {
 };
 
 const withRole = players.filter(p => p.role).length;
-const outPath  = path.join(__dirname, 'export.json');
+const outPath  = path.join(__dirname, '../../frontend/public/leagues/lck-cup-2026/export.json');
 fs.writeFileSync(outPath, JSON.stringify(exportData, null, 2));
 console.log(`✓ stats      ${TOURNAMENT} (${players.length} joueurs, ${withRole} avec rôle)`);

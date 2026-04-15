@@ -238,5 +238,5 @@ const exportData = {
 };
 
 const withRole = players.filter(p => p.role).length;
-fs.writeFileSync(path.join(__dirname, 'export.json'), JSON.stringify(exportData, null, 2));
+fs.writeFileSync(path.join(__dirname, '../../frontend/public/leagues/lec-versus-2026/export.json'), JSON.stringify(exportData, null, 2));
 console.log(`✓ export     ${COMBINED_NAME} (${players.length} joueurs, ${withRole} avec rôle)`);

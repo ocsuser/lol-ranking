@@ -7,4 +7,4 @@ data/db/
 *.sqlite-wal
 .DS_Store
 .env
-leagues/*/export.json
+# les exports sont maintenant dans frontend/public/leagues/ et doivent être commités
