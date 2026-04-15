@@ -22,7 +22,7 @@ Demande si tu veux relancer les scrapers, puis lance le frontend sur http://loca
 
 ```bash
 npm run dev       # prompt scrape + frontend
-npm run scrape    # scraper LCK Cup 2026 uniquement
+npm run scrape    # lance les scrapers 
 ```
 
 ## Système de rating (LIR)
