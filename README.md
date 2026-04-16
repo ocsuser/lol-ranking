@@ -2,7 +2,7 @@
 
 Système de ranking de joueurs professionnels League of Legends, inspiré de HLTV pour CS:GO.
 
-Ligues supportées : **LCK Cup 2026**, **LEC Versus 2026** (à venir).
+Ligues supportées : **LCK**, **LPL**, **LEC**, **LCS**, **First Stand**, **MSI**, **Worlds** — saisons 2025 et 2026.
 
 ## Stack
 
@@ -21,9 +21,27 @@ Demande si tu veux relancer les scrapers, puis lance le frontend sur http://loca
 ## Commandes disponibles
 
 ```bash
-npm run dev       # prompt scrape + frontend
-npm run scrape    # lance les scrapers 
+npm run dev          # prompt scrape + frontend
+npm run scrape       # lance tous les scrapers (2025 + 2026)
+npm run scrape:2026  # scrapers 2026 uniquement
+npm run scrape:2025  # scrapers 2025 uniquement
 ```
+
+Pour détecter de nouveaux tournois sur gol.gg :
+
+```bash
+npx tsx leagues/detect.ts             # saison S16 (défaut)
+npx tsx leagues/detect.ts --season S15  # saison 2025
+npx tsx leagues/detect.ts --all       # sans filtre de ligue
+```
+
+## Ajouter une ligue
+
+1. Créer `leagues/<année>/<id>/scrape.ts` en s'inspirant d'un scraper existant
+2. Définir `SPLITS` (tournois gol.gg) et `COMBINED_NAME`
+3. Ajouter la ligue dans `frontend/src/leagues.ts`
+4. Créer le dossier de sortie : `frontend/public/leagues/<id>/`
+5. Lancer `npx tsx leagues/<année>/<id>/scrape.ts`
 
 ## Système de rating (LIR)
 
@@ -103,17 +121,10 @@ Exemple : un joueur à 80 de rating brut avec la moitié des games du médian �
 
 ### Interprétation
 
-| Plage | Niveau |
-|-------|--------|
-| 75–100 | Élite |
-| 60–75  | Très bon |
-| 45–60  | Moyen |
+| Plage  | Niveau        |
+|--------|---------------|
+| 75–100 | Élite         |
+| 60–75  | Très bon      |
+| 45–60  | Moyen         |
 | 25–45  | En difficulté |
-| 0–25   | Faible |
-
-## Ajouter une ligue
-
-1. Copier `leagues/lck-cup-2026/scrape.ts` dans `leagues/<id>/scrape.ts`
-2. Modifier `TOURNAMENT`, `SEASON`, `league`, `split` en haut du script
-3. Ajouter la ligue dans `frontend/src/leagues.ts`
-4. Lancer `npx tsx leagues/<id>/scrape.ts`
+| 0–25   | Faible        |
