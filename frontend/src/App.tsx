@@ -24,67 +24,6 @@ function useExportData(league: LeagueConfig) {
   return { data, error };
 }
 
-/* ── Styles boutons nav ──────────────────────── */
-const navBtn = (active: boolean): React.CSSProperties => ({
-  padding: '5px 14px',
-  borderRadius: 'var(--r-sm)',
-  border: `1px solid ${active ? 'var(--accent-border)' : 'var(--line)'}`,
-  background: active ? 'var(--accent-dim)' : 'transparent',
-  color: active ? 'var(--accent)' : 'var(--text-3)',
-  fontFamily: 'var(--font-body)',
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: '0.07em',
-  textTransform: 'uppercase' as const,
-  cursor: 'pointer',
-  transition: 'all var(--t-fast)',
-});
-
-const yearBtn = (active: boolean): React.CSSProperties => ({
-  padding: '4px 12px',
-  borderRadius: 'var(--r-sm)',
-  border: `1px solid ${active ? 'var(--accent-border)' : 'var(--line)'}`,
-  background: active ? 'var(--accent-dim)' : 'transparent',
-  color: active ? 'var(--accent)' : 'var(--text-3)',
-  fontFamily: 'var(--font-mono)',
-  fontSize: 12,
-  fontWeight: 700,
-  letterSpacing: '0.04em',
-  cursor: 'pointer',
-  transition: 'all var(--t-fast)',
-});
-
-const leagueBtn = (active: boolean, available: boolean): React.CSSProperties => ({
-  padding: '5px 13px',
-  borderRadius: 'var(--r-sm)',
-  border: `1px solid ${active ? 'var(--accent-border)' : 'var(--line)'}`,
-  background: active ? 'var(--accent-dim)' : 'transparent',
-  color: active ? 'var(--accent)' : available ? 'var(--text-3)' : 'var(--text-4)',
-  fontFamily: 'var(--font-display)',
-  fontSize: 11,
-  fontWeight: 700,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase' as const,
-  cursor: available ? 'pointer' : 'default',
-  opacity: available ? 1 : 0.4,
-  transition: 'all var(--t-fast)',
-});
-
-const splitBtn = (active: boolean): React.CSSProperties => ({
-  padding: '3px 11px',
-  borderRadius: 'var(--r-xs)',
-  border: `1px solid ${active ? 'rgba(212,245,60,0.25)' : 'var(--line)'}`,
-  background: active ? 'var(--accent-faint)' : 'transparent',
-  color: active ? 'var(--accent)' : 'var(--text-3)',
-  fontFamily: 'var(--font-mono)',
-  fontSize: 10,
-  fontWeight: 500,
-  letterSpacing: '0.04em',
-  cursor: 'pointer',
-  transition: 'all var(--t-fast)',
-});
-
-// Aplatit tous les splits (top-level + children) pour trouver le split actif
 function findSplit(splits: SplitConfig[], id: string | null): SplitConfig | null {
   for (const s of splits) {
     if (s.id === id) return s;
@@ -96,7 +35,6 @@ function findSplit(splits: SplitConfig[], id: string | null): SplitConfig | null
   return splits[0] ?? null;
 }
 
-// Retourne le split top-level parent d'un id donné (ou lui-même)
 function parentSplit(splits: SplitConfig[], id: string | null): SplitConfig | null {
   for (const s of splits) {
     if (s.id === id) return s;
@@ -105,8 +43,14 @@ function parentSplit(splits: SplitConfig[], id: string | null): SplitConfig | nu
   return splits[0] ?? null;
 }
 
+const PAGE_ICONS: Record<Page, string> = {
+  overview: '◈',
+  rankings: '▤',
+  rosters:  '⊞',
+};
+
 export default function App() {
-  const [page, setPage]     = useState<Page>('overview');
+  const [page, setPage]       = useState<Page>('overview');
   const [splitId, setSplitId] = useState<string | null>(null);
   const defaultYear = YEARS[YEARS.length - 1];
   const [selection, setSelection] = useState({ year: defaultYear.year, leagueId: defaultYear.leagues[0].id });
@@ -137,144 +81,189 @@ export default function App() {
   const rawPlayers: Player[] = data?.players ?? [];
   const players = enrichPlayers(rawPlayers, activeTournament);
 
+  const pageTitle = page === 'overview'
+    ? `${selection.year} Season`
+    : league.title;
+
+  const pageEyebrow = page === 'overview'
+    ? 'Year Overview'
+    : page === 'rankings' ? 'Player Rankings' : 'Team Rosters';
+
   return (
-    <div>
-      <header className="header">
-        <div className="header__content container">
+    <div className="app-shell">
 
-          {/* Ligne 1 : titre + page */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-              <h1 className="header__title">
-                {page === 'overview' ? `${selection.year} Season` : league.title}
-              </h1>
-              <span className="header__subtitle">
-                {page === 'overview' ? 'Overview' : page === 'rankings' ? 'Rankings' : 'Rosters'}
-              </span>
-            </div>
+      {/* ── Sidebar ──────────────────────────────── */}
+      <nav className="sidebar">
 
-
-            {/* Année + Pages */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: 3 }}>
-                {YEARS.map(y => (
-                  <button key={y.year} onClick={() => handleSetYear(y.year)} style={yearBtn(selection.year === y.year)}>
-                    {y.year}
-                  </button>
-                ))}
-              </div>
-              <div style={{ width: 1, height: 16, background: 'var(--line)' }} />
-              <div style={{ display: 'flex', gap: 3 }}>
-                {(['rankings', 'rosters'] as Page[]).map(p => (
-                  <button key={p} onClick={() => setPage(p)} style={navBtn(page === p)}>
-                    {p === 'rankings' ? 'Rankings' : 'Rosters'}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Logo */}
+        <div className="sidebar__logo">
+          <div className="sidebar__logo-title">
+            LOL<span style={{ color: 'var(--accent)' }}>.</span>GG
           </div>
+          <div className="sidebar__logo-sub">Esports Rankings</div>
+        </div>
 
-          {/* Ligne 2 : overview + leagues */}
-          <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-            <button onClick={() => setPage('overview')} style={leagueBtn(page === 'overview', true)}>
-              Overview
-            </button>
-            <div style={{ width: 1, background: 'var(--line)', margin: '0 4px', alignSelf: 'stretch' }} />
-            {leagues.map(l => (
-              <button key={l.id} onClick={() => l.available && handleSetLeague(l.id)}
-                style={leagueBtn(page !== 'overview' && selection.leagueId === l.id, l.available)}>
-                {l.label}
+        {/* Year selector */}
+        <div className="sidebar__section">
+          <div className="sidebar__section-label">Season</div>
+          <div className="sidebar__year-row">
+            {YEARS.map(y => (
+              <button
+                key={y.year}
+                className={`year-btn${selection.year === y.year ? ' year-btn--active' : ''}`}
+                onClick={() => handleSetYear(y.year)}
+              >
+                {y.year}
               </button>
             ))}
-            {error && (
-              <span style={{ fontSize: 11, color: 'var(--red)', fontFamily: 'var(--font-mono)', marginLeft: 8, alignSelf: 'center' }}>
-                data unavailable
-              </span>
-            )}
           </div>
 
-          {/* Ligne 3 : splits (toujours rendue pour hauteur constante) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', marginTop: 8, minHeight: 26 }}>
-              {(league.splits ?? []).map(s => {
+          {/* Page nav */}
+          <div className="sidebar__section-label" style={{ marginTop: 8 }}>View</div>
+          <button
+            className={`nav-item${page === 'overview' ? ' nav-item--active' : ''}`}
+            onClick={() => setPage('overview')}
+          >
+            <span className="nav-item__icon">{PAGE_ICONS.overview}</span>
+            Overview
+          </button>
+          <button
+            className={`nav-item${page === 'rankings' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
+            onClick={() => league.available && setPage('rankings')}
+          >
+            <span className="nav-item__icon">{PAGE_ICONS.rankings}</span>
+            Rankings
+          </button>
+          <button
+            className={`nav-item${page === 'rosters' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
+            onClick={() => league.available && setPage('rosters')}
+          >
+            <span className="nav-item__icon">{PAGE_ICONS.rosters}</span>
+            Rosters
+          </button>
+        </div>
+
+        <div className="sidebar__divider" />
+
+        {/* Leagues */}
+        <div className="sidebar__section">
+          <div className="sidebar__section-label">League</div>
+          {leagues.map(l => (
+            <button
+              key={l.id}
+              className={`nav-item${!l.available ? ' nav-item--disabled' : ''}${page !== 'overview' && selection.leagueId === l.id ? ' nav-item--active' : ''}`}
+              onClick={() => l.available && handleSetLeague(l.id)}
+            >
+              <span className="nav-item__icon" style={{ fontSize: 11 }}>◆</span>
+              {l.label}
+              {!l.available && (
+                <span className="nav-item__badge">SOON</span>
+              )}
+              {error && selection.leagueId === l.id && (
+                <span className="nav-item__badge" style={{ color: 'var(--red)', borderColor: 'rgba(248,113,113,0.2)' }}>ERR</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Splits — shown when a league is selected */}
+        {page !== 'overview' && league.splits && league.splits.length > 0 && (
+          <>
+            <div className="sidebar__divider" />
+            <div className="sidebar__splits">
+              <div className="sidebar__splits-label">Split</div>
+              {league.splits.map(s => {
                 const activeParent = league.splits ? parentSplit(league.splits, splitId)?.id === s.id : false;
-                const active       = activeParent;
 
                 if (s.children && s.children.length > 0) {
-                  const activeChild = s.children.find(c => c.id === splitId) ?? s.children[0];
                   return (
-                    <span key={s.id} style={{ display: 'inline-flex', alignItems: 'center', position: 'relative' }}>
-                      <select
-                        value={activeChild.id}
-                        onChange={e => setSplitId(e.target.value)}
-                        style={{
-                          ...splitBtn(active),
-                          appearance: 'none' as const,
-                          WebkitAppearance: 'none' as const,
-                          paddingRight: 20,
-                          cursor: 'pointer',
-                          backgroundImage: 'none',
-                        }}
+                    <div key={s.id} className="split-group">
+                      {/* Parent button */}
+                      <button
+                        className={`split-btn split-btn--parent${activeParent ? ' split-btn--active' : ''}`}
+                        onClick={() => setSplitId(s.children![0].id)}
                       >
-                        {s.children.map(c => (
-                          <option key={c.id} value={c.id}
-                            style={{ background: 'var(--bg-2)', color: 'var(--text-1)' }}>
-                            {s.label} · {c.label}
-                          </option>
-                        ))}
-                      </select>
-                      <span style={{
-                        position: 'absolute', right: 5, pointerEvents: 'none',
-                        fontSize: 7, color: active ? 'var(--accent)' : 'var(--text-3)',
-                      }}>▼</span>
-                    </span>
+                        <span>{s.label}</span>
+                        <span className="split-btn__chevron" style={{ opacity: activeParent ? 1 : 0.4 }}>
+                          {activeParent ? '▾' : '▸'}
+                        </span>
+                      </button>
+                      {/* Children — shown only when parent is active */}
+                      {activeParent && (
+                        <div className="split-children">
+                          {s.children.map(c => (
+                            <button
+                              key={c.id}
+                              className={`split-btn split-btn--child${splitId === c.id ? ' split-btn--active' : ''}`}
+                              onClick={() => setSplitId(c.id)}
+                            >
+                              {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   );
                 }
 
                 return (
-                  <button key={s.id} onClick={() => setSplitId(s.id)} style={splitBtn(active)}>
+                  <button
+                    key={s.id}
+                    className={`split-btn${activeParent ? ' split-btn--active' : ''}`}
+                    onClick={() => setSplitId(s.id)}
+                  >
                     {s.label}
                   </button>
                 );
               })}
             </div>
-
-        </div>
-      </header>
-
-      <main className="page container">
-        {page === 'overview' ? (
-          <YearOverview yearConfig={yearConfig} onSelectLeague={handleSetLeague} />
-        ) : !league.available ? (
-          <div style={{ textAlign: 'center', padding: '100px 0' }}>
-            <div style={{
-              fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800,
-              color: 'var(--text-3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10,
-            }}>
-              {league.label}
-            </div>
-            <div style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-4)', fontFamily: 'var(--font-mono)' }}>
-              Coming soon
-            </div>
-          </div>
-        ) : (
-          <>
-            {page === 'rankings' && (
-              <RankingTable
-                players={players}
-                tournament={activeTournament}
-                tournamentName={activeSplit?.label ?? mainTournament?.name}
-              />
-            )}
-            {page === 'rosters' && (
-              <RosterPage players={players} tournament={activeTournament} />
-            )}
           </>
         )}
 
-        <footer className="footer">
-          <p>Data · <strong>gol.gg</strong> · LIR percentile rating by role</p>
-        </footer>
-      </main>
+        {/* Footer */}
+        <div className="sidebar__footer">
+          <div>Data · <strong style={{ color: 'var(--text-3)' }}>gol.gg</strong></div>
+          <div>LIR rating by role</div>
+        </div>
+      </nav>
+
+      {/* ── Main ─────────────────────────────────── */}
+      <div className="main-content">
+
+        {/* Page header */}
+        <div className="page-header">
+          <div className="page-header__eyebrow">{pageEyebrow}</div>
+          <h1 className="page-header__title">{pageTitle}</h1>
+        </div>
+
+        <main className="page">
+          {page === 'overview' ? (
+            <YearOverview yearConfig={yearConfig} onSelectLeague={handleSetLeague} />
+          ) : !league.available ? (
+            <div className="state-center">
+              <div className="state-center__label">{league.label}</div>
+              <div className="state-center__sub">Coming soon</div>
+            </div>
+          ) : (
+            <>
+              {page === 'rankings' && (
+                <RankingTable
+                  players={players}
+                  tournament={activeTournament}
+                  tournamentName={activeSplit?.label ?? mainTournament?.name}
+                />
+              )}
+              {page === 'rosters' && (
+                <RosterPage players={players} tournament={activeTournament} />
+              )}
+            </>
+          )}
+
+          <footer className="footer">
+            <p>Data · <strong>gol.gg</strong> · LIR percentile rating by role</p>
+          </footer>
+        </main>
+      </div>
     </div>
   );
 }

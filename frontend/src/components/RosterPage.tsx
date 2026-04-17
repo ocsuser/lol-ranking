@@ -3,15 +3,14 @@ import type { Player, Role } from '../types';
 import { ROLE_COLOR, getPlayerStats, fmt } from '../utils';
 import PlayerModal from './PlayerModal';
 
-const ROLE_ORDER: Role[]                = ['TOP', 'JGL', 'MID', 'BOT', 'SUP'];
-const ROLE_LABEL: Record<Role, string>  = { TOP: 'Top', JGL: 'Jgl', MID: 'Mid', BOT: 'Bot', SUP: 'Sup' };
+const ROLE_ORDER: Role[]               = ['TOP', 'JGL', 'MID', 'BOT', 'SUP'];
+const ROLE_LABEL: Record<Role, string> = { TOP: 'Top', JGL: 'Jgl', MID: 'Mid', BOT: 'Bot', SUP: 'Sup' };
 
 interface Props { players: Player[]; tournament?: string; }
 
 export default function RosterPage({ players, tournament }: Props) {
   const [selected, setSelected] = useState<Player | null>(null);
 
-  /* Group by team — filter out players with no stats for active tournament */
   const teamMap = new Map<string, Player[]>();
   for (const p of players) {
     if (!p.team) continue;
@@ -20,12 +19,11 @@ export default function RosterPage({ players, tournament }: Props) {
     teamMap.get(p.team)!.push(p);
   }
 
-  /* Sort teams alphabetically */
   const teams = Array.from(teamMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 10 }}>
         {teams.map(([teamName, teamPlayers]) => {
           const sorted = [...teamPlayers].sort((a, b) => {
             const ia = ROLE_ORDER.indexOf(a.role as Role);
@@ -41,38 +39,15 @@ export default function RosterPage({ players, tournament }: Props) {
           const wrColor = teamWr >= 60 ? 'var(--green)' : teamWr >= 45 ? 'var(--text-2)' : 'var(--red)';
 
           return (
-            <div key={teamName} style={{
-              background: 'var(--bg-2)',
-              border: '1px solid var(--line)',
-              borderRadius: 'var(--r-md)',
-              overflow: 'hidden',
-            }}>
-              {/* Team header */}
-              <div style={{
-                padding: '12px 16px',
-                borderBottom: '1px solid var(--line)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: 'var(--bg-3)',
-              }}>
-                <span style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 14,
-                  fontWeight: 800,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                  color: 'var(--text-1)',
-                }}>{teamName}</span>
+            <div key={teamName} className="team-card">
+              <div className="team-card__header">
+                <span className="team-card__name">{teamName}</span>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600, color: wrColor, letterSpacing: '-0.02em' }}>
-                    {fmt(teamWr)}%
-                  </div>
-                  <div style={{ fontSize: 9, color: 'var(--text-4)', letterSpacing: '0.10em', textTransform: 'uppercase' }}>Win Rate</div>
+                  <div className="team-card__wr" style={{ color: wrColor }}>{fmt(teamWr)}%</div>
+                  <div className="team-card__wr-label">Win Rate</div>
                 </div>
               </div>
 
-              {/* Players */}
               <div>
                 {sorted.map(p => {
                   const stats     = getPlayerStats(p, tournament);
@@ -82,55 +57,38 @@ export default function RosterPage({ players, tournament }: Props) {
                   return (
                     <div
                       key={p.id}
+                      className="team-player-row"
                       onClick={() => setSelected(p)}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '56px 1fr auto',
-                        alignItems: 'center',
-                        padding: '8px 16px',
-                        cursor: 'pointer',
-                        borderBottom: '1px solid var(--line)',
-                        opacity: isStarter ? 1 : 0.45,
-                        transition: 'background var(--t-fast)',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      style={{ opacity: isStarter ? 1 : 0.4 }}
                     >
-                      {/* Role */}
-                      <span style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 10,
-                        fontWeight: 600,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        color: isStarter ? roleColor : 'var(--text-4)',
-                      }}>
+                      <span
+                        className="team-player-row__role"
+                        style={{ color: isStarter ? roleColor : 'var(--text-4)' }}
+                      >
                         {p.role ? ROLE_LABEL[p.role as Role] ?? p.role : '—'}
                       </span>
 
-                      {/* Name */}
-                      <span style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 13,
-                        fontWeight: isStarter ? 600 : 400,
-                        color: isStarter ? 'var(--text-1)' : 'var(--text-3)',
-                      }}>{p.name}</span>
+                      <span
+                        className="team-player-row__name"
+                        style={{ fontWeight: isStarter ? 600 : 400, color: isStarter ? 'var(--text-1)' : 'var(--text-3)' }}
+                      >
+                        {p.name}
+                      </span>
 
-                      {/* Quick stats */}
                       {stats && isStarter ? (
-                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <div className="team-player-row__stats">
                           {[
                             { l: 'KDA', v: fmt(stats.kda) },
                             { l: 'DPM', v: fmt(stats.dpm, 0) },
                           ].map(s => (
-                            <div key={s.l} style={{ textAlign: 'right' }}>
-                              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)', letterSpacing: '-0.02em' }}>{s.v}</div>
-                              <div style={{ fontSize: 8, color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.l}</div>
+                            <div key={s.l} className="quick-stat">
+                              <div className="quick-stat__val">{s.v}</div>
+                              <div className="quick-stat__label">{s.l}</div>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-4)' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-4)' }}>
                           {stats ? `${stats.games}G` : ''}
                         </span>
                       )}

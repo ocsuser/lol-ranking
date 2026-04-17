@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import {
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip,
+} from 'recharts';
 import type { ExportData, Player, Role } from '../types';
-import { enrichPlayers, ROLE_COLOR } from '../utils';
+import { enrichPlayers, getPlayerStats, ROLE_COLOR } from '../utils';
 import { type YearConfig } from '../leagues';
-import RoleTag from './RoleTag';
+import PlayerSheet from './PlayerSheet';
 
 const ROLES: Role[] = ['TOP', 'JGL', 'MID', 'BOT', 'SUP'];
 const ROLE_LABEL: Record<Role, string> = { TOP: 'Top', JGL: 'Jungle', MID: 'Mid', BOT: 'Bot', SUP: 'Support' };
@@ -26,200 +29,186 @@ function useAllLeaguesData(yearConfig: YearConfig) {
       id: l.id, label: l.label, players: [], loading: true, error: false,
     }))
   );
-
   useEffect(() => {
-    setLeaguesData(
-      yearConfig.leagues.filter(l => l.available).map(l => ({
-        id: l.id, label: l.label, players: [], loading: true, error: false,
-      }))
-    );
-
+    setLeaguesData(yearConfig.leagues.filter(l => l.available).map(l => ({
+      id: l.id, label: l.label, players: [], loading: true, error: false,
+    })));
     yearConfig.leagues.filter(l => l.available).forEach(league => {
       fetch(`/leagues/${league.file}`)
         .then(r => { if (!r.ok) throw new Error(); return r.json(); })
         .then((d: ExportData) => {
-          const combinedTournament = d.metadata.tournaments[0]?.name;
-          const players = enrichPlayers(d.players, combinedTournament);
+          const t = d.metadata.tournaments[0]?.name;
           setLeaguesData(prev => prev.map(ld =>
-            ld.id === league.id ? { ...ld, players, loading: false } : ld
+            ld.id === league.id ? { ...ld, players: enrichPlayers(d.players, t), loading: false } : ld
           ));
         })
-        .catch(() => {
-          setLeaguesData(prev => prev.map(ld =>
-            ld.id === league.id ? { ...ld, loading: false, error: true } : ld
-          ));
-        });
+        .catch(() => setLeaguesData(prev => prev.map(ld =>
+          ld.id === league.id ? { ...ld, loading: false, error: true } : ld
+        )));
     });
   }, [yearConfig.year]);
-
   return leaguesData;
 }
 
-function TopRoleCard({ player, rank }: { player: Player; rank: number }) {
-  const rating = player.rating ?? 0;
+function norm(val: number, min: number, max: number) {
+  return Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+}
 
+function buildRadarData(player: Player) {
+  const stats = getPlayerStats(player);
+  if (!stats) return null;
+  const sub = player.subscores;
+  if (sub) {
+    return [
+      { axis: 'Laning',     val: Math.round(sub.laning),      full: 100 },
+      { axis: 'Damage',     val: Math.round(sub.damage),      full: 100 },
+      { axis: 'Presence',   val: Math.round(sub.presence),    full: 100 },
+      { axis: 'Efficiency', val: Math.round(sub.efficiency),  full: 100 },
+      { axis: 'Win%',       val: norm(stats.winRate, 30, 90), full: 100 },
+      { axis: 'KDA',        val: norm(stats.kda, 1, 7),        full: 100 },
+    ];
+  }
+  return [
+    { axis: 'Win%',  val: norm(stats.winRate, 30, 90), full: 100 },
+    { axis: 'KDA',   val: norm(stats.kda, 1, 7),       full: 100 },
+    { axis: 'DPM',   val: norm(stats.dpm, 150, 920),   full: 100 },
+    { axis: 'CSM',   val: norm(stats.csm, 0.8, 11),    full: 100 },
+    { axis: 'KP%',   val: norm(stats.kp, 40, 80),      full: 100 },
+    { axis: 'GD@15', val: norm(stats.gd15, -400, 400), full: 100 },
+  ];
+}
+
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payload: { axis: string; val: number } }[] }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      padding: '8px 10px',
-      borderRadius: 'var(--r-sm)',
-      background: 'var(--bg-3)',
-      border: '1px solid var(--line)',
-      minWidth: 0,
-    }}>
-      <span style={{
-        fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
-        color: rank === 0 ? 'var(--accent)' : 'var(--text-4)',
-        width: 14, flexShrink: 0, textAlign: 'center',
-      }}>
-        {rank + 1}
-      </span>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{
-          fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600,
-          color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>{player.name}</div>
-        <div style={{ fontSize: 10, color: 'var(--text-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {player.team}
-        </div>
-      </div>
-      <span style={{
-        fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600,
-        color: rating >= 70 ? 'var(--accent)' : rating >= 55 ? 'var(--text-1)' : 'var(--text-2)',
-        flexShrink: 0,
-      }}>
-        {rating.toFixed(1)}
-      </span>
+    <div style={{ background: 'var(--bg-3)', border: '1px solid var(--line-med)', borderRadius: 4, padding: '5px 10px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-1)' }}>
+      {d.axis} · <span style={{ color: 'var(--accent)' }}>{d.val.toFixed(0)}</span>
     </div>
   );
 }
 
-function LeagueCard({ ld, onSelect }: { ld: LeagueData; onSelect: () => void }) {
-  const topByRole: Record<Role, Player[]> = { TOP: [], JGL: [], MID: [], BOT: [], SUP: [] };
+function PlayerRadar({ player, color, size = 140 }: { player: Player; color: string; size?: number }) {
+  const data = buildRadarData(player);
+  if (!data) return null;
+  return (
+    <ResponsiveContainer width={size} height={size}>
+      <RadarChart data={data} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+        <PolarGrid gridType="polygon" stroke="rgba(255,255,255,0.07)" strokeWidth={1} />
+        <PolarAngleAxis
+          dataKey="axis"
+          tick={{ fontFamily: 'Space Mono, monospace', fontSize: 8, fill: 'rgba(240,238,232,0.4)', fontWeight: 700 }}
+          tickLine={false}
+        />
+        <Radar dataKey="val" stroke={color} fill={color} fillOpacity={0.2} strokeWidth={1.5} dot={false} />
+        <Tooltip content={<CustomTooltip />} />
+      </RadarChart>
+    </ResponsiveContainer>
+  );
+}
 
-  for (const role of ROLES) {
-    topByRole[role] = [...ld.players]
-      .filter(p => p.role === role && p.rating !== undefined)
-      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-      .slice(0, 3);
-  }
 
-  const totalPlayers = ld.players.length;
-  const topRated = [...ld.players].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))[0];
+/* ── Carte rôle cliquable ─────────────────────── */
+function RoleTopRow({ players }: { players: Record<Role, Player | undefined> }) {
+  const [expanded, setExpanded] = useState<Role | null>(null);
+  const expandedPlayer = expanded ? players[expanded] : null;
 
   return (
-    <div style={{
-      background: 'var(--bg-1)',
-      border: '1px solid var(--line)',
-      borderRadius: 'var(--r-md)',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      {/* Header de la carte */}
-      <div style={{
-        padding: '14px 18px 12px',
-        borderBottom: '1px solid var(--line)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{
-            fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800,
-            color: 'var(--text-1)', letterSpacing: '0.06em', textTransform: 'uppercase',
-          }}>{ld.label}</span>
-          {!ld.loading && !ld.error && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-4)' }}>
-              {totalPlayers} players
-            </span>
-          )}
-        </div>
-        <button
-          onClick={onSelect}
-          style={{
-            padding: '3px 10px',
-            borderRadius: 'var(--r-xs)',
-            border: '1px solid var(--line)',
-            background: 'transparent',
-            color: 'var(--text-3)',
-            fontFamily: 'var(--font-body)',
-            fontSize: 10, fontWeight: 600,
-            letterSpacing: '0.06em', textTransform: 'uppercase',
-            cursor: 'pointer',
-            transition: 'all var(--t-fast)',
-          }}
-          onMouseEnter={e => {
-            (e.target as HTMLButtonElement).style.color = 'var(--accent)';
-            (e.target as HTMLButtonElement).style.borderColor = 'var(--accent-border)';
-          }}
-          onMouseLeave={e => {
-            (e.target as HTMLButtonElement).style.color = 'var(--text-3)';
-            (e.target as HTMLButtonElement).style.borderColor = 'var(--line)';
-          }}
-        >
-          Rankings →
-        </button>
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, marginTop: 2 }}>
+        {ROLES.map(role => {
+          const p = players[role];
+          const color = ROLE_COLOR[role];
+          const isActive = expanded === role;
+
+          if (!p) return (
+            <div key={role} style={{ padding: '10px 8px', borderRadius: 5, background: 'var(--bg-2)', border: '1px solid var(--line)', textAlign: 'center' }}>
+              <div style={{ fontSize: 9, color: 'var(--text-4)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.10em', marginBottom: 4 }}>{ROLE_LABEL[role]}</div>
+              <div style={{ color: 'var(--text-4)', fontSize: 11 }}>—</div>
+            </div>
+          );
+
+          const rating = p.rating ?? 0;
+          return (
+            <div
+              key={role}
+              onClick={() => setExpanded(isActive ? null : role)}
+              style={{
+                padding: '10px 8px',
+                borderRadius: 5,
+                background: isActive ? `${color}14` : `${color}08`,
+                border: `1px solid ${isActive ? color + '50' : color + '25'}`,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                cursor: 'pointer',
+                transition: 'transform 120ms, border-color 120ms, background 120ms',
+                position: 'relative',
+              }}
+              onMouseEnter={e => { if (!isActive) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              {/* Hint "click to expand" */}
+              <div style={{
+                position: 'absolute', top: 5, right: 7,
+                fontFamily: 'var(--font-mono)', fontSize: 8,
+                color: isActive ? color : 'var(--text-4)',
+                opacity: isActive ? 1 : 0.6,
+              }}>{isActive ? '✕' : '⤢'}</div>
+
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700, color, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                {ROLE_LABEL[role]}
+              </div>
+              <PlayerRadar player={p} color={color} size={80} />
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, color: 'var(--text-1)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                {p.name}
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color, letterSpacing: '-0.03em' }}>
+                {rating.toFixed(1)}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Contenu */}
-      {ld.loading ? (
-        <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--text-4)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-          Loading…
-        </div>
-      ) : ld.error ? (
-        <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-          Data unavailable
-        </div>
-      ) : (
-        <div style={{ padding: '12px 18px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Modal au clic */}
+      {expandedPlayer && (
+        <PlayerSheet player={expandedPlayer} onClose={() => setExpanded(null)} />
+      )}
+    </>
+  );
+}
 
-          {/* Best player global */}
-          {topRated && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 12px',
-              background: 'var(--accent-faint)',
-              border: '1px solid var(--accent-border)',
-              borderRadius: 'var(--r-sm)',
-            }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 9, color: 'var(--accent)', fontFamily: 'var(--font-mono)', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 2 }}>
-                  Best Player
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <RoleTag role={topRated.role} />
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: 'var(--text-1)' }}>
-                    {topRated.name}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{topRated.team}</span>
-                </div>
-              </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.03em' }}>
-                {(topRated.rating ?? 0).toFixed(1)}
-              </span>
-            </div>
+function LeagueCard({ ld, onSelect }: { ld: LeagueData; onSelect: () => void }) {
+  const sorted = [...ld.players]
+    .filter(p => p.rating !== undefined)
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+
+  const bestByRole: Record<Role, Player | undefined> = { TOP: undefined, JGL: undefined, MID: undefined, BOT: undefined, SUP: undefined };
+  for (const role of ROLES) {
+    bestByRole[role] = sorted.find(p => p.role === role);
+  }
+
+  return (
+    <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 46, borderBottom: '1px solid var(--line)', background: 'var(--bg-2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 22, letterSpacing: '0.06em', color: 'var(--text-1)' }}>{ld.label}</span>
+          {!ld.loading && !ld.error && (
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-4)', letterSpacing: '0.10em', textTransform: 'uppercase' }}>{ld.players.length} players</span>
           )}
+        </div>
+        <button onClick={onSelect} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-3)', background: 'transparent', border: '1px solid var(--line)', borderRadius: 3, padding: '4px 10px', cursor: 'pointer', transition: 'all var(--t-fast)' }}
+          onMouseEnter={e => { const b = e.currentTarget; b.style.color = 'var(--accent)'; b.style.borderColor = 'var(--accent-border)'; b.style.background = 'var(--accent-dim)'; }}
+          onMouseLeave={e => { const b = e.currentTarget; b.style.color = 'var(--text-3)'; b.style.borderColor = 'var(--line)'; b.style.background = 'transparent'; }}
+        >Rankings →</button>
+      </div>
 
-          {/* Top 3 par rôle */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-            {ROLES.map(role => (
-              <div key={role}>
-                <div style={{
-                  fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 600,
-                  letterSpacing: '0.10em', textTransform: 'uppercase',
-                  color: ROLE_COLOR[role],
-                  marginBottom: 5,
-                }}>
-                  {ROLE_LABEL[role]}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {topByRole[role].length > 0
-                    ? topByRole[role].map((p, i) => <TopRoleCard key={p.id} player={p} rank={i} />)
-                    : <div style={{ fontSize: 10, color: 'var(--text-4)', fontFamily: 'var(--font-mono)', padding: '6px 0' }}>—</div>
-                  }
-                </div>
-              </div>
-            ))}
-          </div>
+      {ld.loading ? (
+        <div style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text-4)', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Loading…</div>
+      ) : ld.error ? (
+        <div style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>Data unavailable</div>
+      ) : (
+        <div style={{ padding: '16px 20px 20px' }}>
+          <RoleTopRow players={bestByRole} />
         </div>
       )}
     </div>
@@ -228,15 +217,10 @@ function LeagueCard({ ld, onSelect }: { ld: LeagueData; onSelect: () => void }) 
 
 export default function YearOverview({ yearConfig, onSelectLeague }: Props) {
   const leaguesData = useAllLeaguesData(yearConfig);
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {leaguesData.map(ld => (
-        <LeagueCard
-          key={ld.id}
-          ld={ld}
-          onSelect={() => onSelectLeague(ld.id)}
-        />
+        <LeagueCard key={ld.id} ld={ld} onSelect={() => onSelectLeague(ld.id)} />
       ))}
     </div>
   );
