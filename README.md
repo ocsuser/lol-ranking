@@ -22,9 +22,10 @@ Lance le frontend sur http://localhost:5173. Pour mettre à jour les données, u
 
 ```bash
 npm run dev          # lance le frontend sur http://localhost:5173
-npm run scrape       # lance tous les scrapers (2025 + 2026)
+npm run scrape       # scrapers 2026 (LCK, LPL, LEC, LCS, First Stand)
 npm run scrape:2026  # scrapers 2026 uniquement
-npm run scrape:2025  # scrapers 2025 uniquement
+npm run scrape:2025  # scrapers 2025 (LCK, LPL, LEC, First Stand, MSI, Worlds)
+npm run logos        # télécharge les logos d'équipe depuis l'API Lolesports
 ```
 
 Pour détecter de nouveaux tournois sur gol.gg :
@@ -79,21 +80,29 @@ const COMBINED_NAME = 'LCS 2025'; // nom du tournoi "combiné" (tous splits fusi
 > `name` : nom **exact** du tournoi sur gol.gg (copier-coller depuis l'étape 1).  
 > `COMBINED_NAME` : nom du tournoi virtuel qui agrège tous les splits.
 
-En bas du fichier, mets à jour la section LIR par split pour refléter tes splits :
+Le scraper utilise un `roleMap` **par split** (et non global) pour que les joueurs ayant changé d'équipe en cours de saison conservent le bon team par période.
+
+Dans la section export, chaque entrée `tournaments` doit inclure le champ `team` issu du split correspondant :
 
 ```ts
-// Pour chaque split défini dans SPLITS, ajouter un bloc du type :
-const springPlayers = players.filter(p => p.rows.spring);
-const springResults = computeRatingsForGroup(springPlayers, p => p.rows.spring);
-springPlayers.forEach((p, i) => { p.lirSpring = springResults[i]; });
+for (const split of SPLITS) {
+  if (p.rows[split.key]) {
+    tournaments[split.name] = {
+      ...toStats(p.rows[split.key]),
+      team: p.rows[split.key].team,
+      ...(p[`lir_${split.key}`] ?? {}),
+    };
+  }
+}
 ```
 
-Et dans la section export, ajouter les entrées `tournaments` correspondantes :
+Pour les combinés (ex. Split 1 + Playoffs), le `team` vient du split le plus récent :
 
 ```ts
-if (p.rows.spring) {
-  tournaments[SPLITS[0].name] = { ...toStats(p.rows.spring), ...(p.lirSpring ?? {}) };
-}
+const s1team = p.rows.split1po?.team || p.rows.split1?.team || '';
+tournaments['LCS 2025 Split 1 Combined'] = {
+  ...toStats(p.split1Combined), team: s1team, ...(p.lirSplit1Combined ?? {})
+};
 ```
 
 Mets aussi à jour le chemin de sortie en bas du fichier :
@@ -161,10 +170,16 @@ Pour grouper des splits avec un menu déroulant hiérarchique, utilise `children
 
 ### Étape 6 — Ajouter le script npm (optionnel)
 
-Dans `package.json`, ajoute le scraper à `scrape:2025` :
+Dans `package.json`, ajoute le scraper à `scrape:2025` (ou `scrape:2026`) :
 
 ```json
 "scrape:2025": "... && tsx leagues/2025/lcs-2025/scrape.ts"
+```
+
+Puis lance `npm run logos` pour télécharger les logos de la nouvelle ligue :
+
+```bash
+npm run logos
 ```
 
 ---
