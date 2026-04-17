@@ -115,7 +115,7 @@ function RoleTopRow({ players }: { players: Record<Role, Player | undefined> }) 
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, marginTop: 2 }}>
+      <div className="role-top-grid">
         {ROLES.map(role => {
           const p = players[role];
           const color = ROLE_COLOR[role];

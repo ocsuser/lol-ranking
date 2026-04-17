@@ -52,6 +52,7 @@ const PAGE_ICONS: Record<Page, string> = {
 export default function App() {
   const [page, setPage]       = useState<Page>('overview');
   const [splitId, setSplitId] = useState<string | null>(null);
+  const [navOpen, setNavOpen] = useState(false);
   const defaultYear = YEARS[YEARS.length - 1];
   const [selection, setSelection] = useState({ year: defaultYear.year, leagueId: defaultYear.leagues[0].id });
 
@@ -61,17 +62,21 @@ export default function App() {
 
   const { data, error } = useExportData(league);
 
+  const closeNav = () => setNavOpen(false);
+
   const handleSetYear = (y: number) => {
     const yc = YEARS.find(x => x.year === y) ?? YEARS[0];
     setSelection({ year: y, leagueId: yc.leagues[0].id });
     setSplitId(null);
     setPage('overview');
+    closeNav();
   };
 
   const handleSetLeague = (id: string) => {
     setSelection(s => ({ ...s, leagueId: id }));
     setSplitId(null);
     setPage('rankings');
+    closeNav();
   };
 
   const mainTournament   = data?.metadata.tournaments[0];
@@ -92,8 +97,11 @@ export default function App() {
   return (
     <div className="app-shell">
 
+      {/* ── Mobile nav overlay ───────────────────── */}
+      {navOpen && <div className="nav-overlay" onClick={closeNav} />}
+
       {/* ── Sidebar ──────────────────────────────── */}
-      <nav className="sidebar">
+      <nav className={`sidebar${navOpen ? ' sidebar--open' : ''}`}>
 
         {/* Logo */}
         <div className="sidebar__logo">
@@ -122,21 +130,21 @@ export default function App() {
           <div className="sidebar__section-label" style={{ marginTop: 8 }}>View</div>
           <button
             className={`nav-item${page === 'overview' ? ' nav-item--active' : ''}`}
-            onClick={() => setPage('overview')}
+            onClick={() => { setPage('overview'); closeNav(); }}
           >
             <span className="nav-item__icon">{PAGE_ICONS.overview}</span>
             Overview
           </button>
           <button
             className={`nav-item${page === 'rankings' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
-            onClick={() => league.available && setPage('rankings')}
+            onClick={() => { league.available && setPage('rankings'); closeNav(); }}
           >
             <span className="nav-item__icon">{PAGE_ICONS.rankings}</span>
             Rankings
           </button>
           <button
             className={`nav-item${page === 'rosters' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
-            onClick={() => league.available && setPage('rosters')}
+            onClick={() => { league.available && setPage('rosters'); closeNav(); }}
           >
             <span className="nav-item__icon">{PAGE_ICONS.rosters}</span>
             Rosters
@@ -232,8 +240,13 @@ export default function App() {
 
         {/* Page header */}
         <div className="page-header">
-          <div className="page-header__eyebrow">{pageEyebrow}</div>
-          <h1 className="page-header__title">{pageTitle}</h1>
+          <button className="burger-btn" onClick={() => setNavOpen(o => !o)} aria-label="Menu">
+            <span /><span /><span />
+          </button>
+          <div>
+            <div className="page-header__eyebrow">{pageEyebrow}</div>
+            <h1 className="page-header__title">{pageTitle}</h1>
+          </div>
         </div>
 
         <main className="page">

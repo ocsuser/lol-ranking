@@ -121,10 +121,10 @@ export default function PlayerSheet({ player, onClose, tournament }: Props) {
         {/* Barre rôle en haut */}
         <div style={{ height: 3, background: roleColor, borderRadius: '8px 8px 0 0' }} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px' }}>
+        <div className="sheet-body">
 
           {/* ── Colonne gauche : header + stats ── */}
-          <div style={{ padding: '22px 24px', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto', maxHeight: '88vh' }}>
+          <div className="sheet-left">
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -196,7 +196,7 @@ export default function PlayerSheet({ player, onClose, tournament }: Props) {
           </div>
 
           {/* ── Colonne droite : radar + subscores ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '22px 16px', gap: 14 }}>
+          <div className="sheet-right">
 
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-4)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
               Performance Profile
