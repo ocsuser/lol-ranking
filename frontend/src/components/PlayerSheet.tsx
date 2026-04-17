@@ -128,18 +128,20 @@ export default function PlayerSheet({ player, onClose, tournament, teamLogos = {
 
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                  <span className="player-name" style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--text-1)', letterSpacing: '0.04em', lineHeight: 1 }}>
-                    {player.name}
-                  </span>
-                  <RoleTag role={player.role} />
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {teamLogos[player.team] && (
-                    <img src={teamLogos[player.team]} alt={player.team} style={{ width: 16, height: 16, objectFit: 'contain' }} />
-                  )}
-                  {player.team}{player.country ? ` · ${player.country}` : ''}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                {teamLogos[player.team] && (
+                  <img src={teamLogos[player.team]} alt={player.team} style={{ width: 52, height: 52, objectFit: 'contain', flexShrink: 0 }} />
+                )}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                    <span className="player-name" style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: 'var(--text-1)', letterSpacing: '0.04em', lineHeight: 1 }}>
+                      {player.name}
+                    </span>
+                    <RoleTag role={player.role} />
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                    {player.team}{player.country ? ` · ${player.country}` : ''}
+                  </div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>

@@ -12,16 +12,16 @@
     ]
   },
   "teamLogos": {
-    "BK ROG Esports": "https://gol.gg/_img/teams_icon/BK_ROG_Esportslogo_square.webp",
-    "Galions": "https://gol.gg/_img/teams_icon/Galionslogo_square.webp",
-    "GameWard": "https://gol.gg/_img/teams_icon/GameWardlogo_square.webp",
-    "Gentle Mates": "https://gol.gg/_img/teams_icon/Gentle_Mateslogo_square.webp",
-    "Ici Japon Corp. Esport": "https://gol.gg/_img/teams_icon/Ici_Japon_Corp._Esportlogo_square.webp",
-    "Joblife": "https://gol.gg/_img/teams_icon/Joblifelogo_profile.webp",
-    "Karmine Corp Blue": "https://gol.gg/_img/teams_icon/Karmine_Corplogo_square.webp",
-    "Solary": "https://gol.gg/_img/teams_icon/Solarylogo_square.webp",
-    "Team BDS Academy": "https://gol.gg/_img/teams_icon/Team_BDSlogo_profile.webp",
-    "Vitality.Bee": "https://gol.gg/_img/teams_icon/Team_Vitalitylogo_square.webp"
+    "BK ROG Esports": "/logos/bk_rog_esports.png",
+    "Galions": "/logos/galions.png",
+    "GameWard": "/logos/gameward.png",
+    "Gentle Mates": "/logos/gentle_mates.png",
+    "Ici Japon Corp. Esport": "/logos/ici_japon_corp__esport.png",
+    "Joblife": "/logos/joblife.png",
+    "Karmine Corp Blue": "/logos/karmine_corp_blue.png",
+    "Solary": "/logos/solary.png",
+    "Team BDS Academy": "/logos/team_bds_academy.png",
+    "Vitality.Bee": "/logos/vitality_bee.png"
   },
   "players": [
     {

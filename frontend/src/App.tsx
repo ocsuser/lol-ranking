@@ -99,7 +99,7 @@ export default function App() {
     setSelection(s => ({ ...s, leagueId: id }));
     setSplitId(firstLeafId);
     if (page === 'overview' || page === 'about') setPage('rankings');
-    closeNav();
+    if (!newLeague.splits || newLeague.splits.length === 0) closeNav();
   };
 
   const mainTournament   = data?.metadata.tournaments[0];
@@ -237,7 +237,7 @@ export default function App() {
                             <button
                               key={c.id}
                               className={`split-btn split-btn--child${splitId === c.id ? ' split-btn--active' : ''}`}
-                              onClick={() => setSplitId(c.id)}
+                              onClick={() => { setSplitId(c.id); closeNav(); }}
                             >
                               {c.label}
                             </button>
@@ -252,7 +252,7 @@ export default function App() {
                   <button
                     key={s.id}
                     className={`split-btn${activeParent ? ' split-btn--active' : ''}`}
-                    onClick={() => setSplitId(s.id)}
+                    onClick={() => { setSplitId(s.id); closeNav(); }}
                   >
                     {s.label}
                   </button>
