@@ -16,12 +16,12 @@ Ligues supportées : **LCK**, **LPL**, **LEC**, **LCS**, **First Stand**, **MSI*
 npm run dev
 ```
 
-Demande si tu veux relancer les scrapers, puis lance le frontend sur http://localhost:5173.
+Lance le frontend sur http://localhost:5173. Pour mettre à jour les données, utiliser `npm run scrape` séparément.
 
 ## Commandes disponibles
 
 ```bash
-npm run dev          # prompt scrape + frontend
+npm run dev          # lance le frontend sur http://localhost:5173
 npm run scrape       # lance tous les scrapers (2025 + 2026)
 npm run scrape:2026  # scrapers 2026 uniquement
 npm run scrape:2025  # scrapers 2025 uniquement
