@@ -122,8 +122,8 @@ function RoleTopRow({ players }: { players: Record<Role, Player | undefined> }) 
           const isActive = expanded === role;
 
           if (!p) return (
-            <div key={role} style={{ padding: '10px 8px', borderRadius: 5, background: 'var(--bg-2)', border: '1px solid var(--line)', textAlign: 'center' }}>
-              <div style={{ fontSize: 9, color: 'var(--text-4)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.10em', marginBottom: 4 }}>{ROLE_LABEL[role]}</div>
+            <div key={role} className="role-card role-card--empty">
+              <div className="role-card__label" style={{ color }}>{ROLE_LABEL[role]}</div>
               <div style={{ color: 'var(--text-4)', fontSize: 11 }}>—</div>
             </div>
           );
@@ -132,38 +132,22 @@ function RoleTopRow({ players }: { players: Record<Role, Player | undefined> }) 
           return (
             <div
               key={role}
-              onClick={() => setExpanded(isActive ? null : role)}
+              className={`role-card${isActive ? ' role-card--active' : ''}`}
               style={{
-                padding: '10px 8px',
-                borderRadius: 5,
                 background: isActive ? `${color}14` : `${color}08`,
                 border: `1px solid ${isActive ? color + '50' : color + '25'}`,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                cursor: 'pointer',
-                transition: 'transform 120ms, border-color 120ms, background 120ms',
-                position: 'relative',
               }}
+              onClick={() => setExpanded(isActive ? null : role)}
               onMouseEnter={e => { if (!isActive) e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              {/* Hint "click to expand" */}
-              <div style={{
-                position: 'absolute', top: 5, right: 7,
-                fontFamily: 'var(--font-mono)', fontSize: 8,
-                color: isActive ? color : 'var(--text-4)',
-                opacity: isActive ? 1 : 0.6,
-              }}>{isActive ? '✕' : '⤢'}</div>
-
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700, color, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                {ROLE_LABEL[role]}
+              <div className="role-card__hint" style={{ color: isActive ? color : 'var(--text-4)' }}>
+                {isActive ? '✕' : '⤢'}
               </div>
+              <div className="role-card__label" style={{ color }}>{ROLE_LABEL[role]}</div>
               <PlayerRadar player={p} color={color} size={80} />
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, color: 'var(--text-1)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                {p.name}
-              </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color, letterSpacing: '-0.03em' }}>
-                {rating.toFixed(1)}
-              </div>
+              <div className="role-card__name">{p.name}</div>
+              <div className="role-card__rating" style={{ color }}>{rating.toFixed(1)}</div>
             </div>
           );
         })}

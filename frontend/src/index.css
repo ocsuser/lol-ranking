@@ -1330,7 +1330,7 @@ a:hover { opacity: 0.75; }
 }
 
 
-/* ─── Overview role grid ─────────────────────── */
+/* ─── Overview role grid & cards ─────────────── */
 
 .role-top-grid {
   display: grid;
@@ -1339,21 +1339,77 @@ a:hover { opacity: 0.75; }
   margin-top: 2px;
 }
 
-@media (max-width: 640px) {
-  .role-top-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  /* SUP card (5th) spans remaining space when 3-col */
-  .role-top-grid > :nth-child(4),
-  .role-top-grid > :nth-child(5) {
-    /* keep natural flow, no extra spanning needed in 3-col */
-  }
+.role-card {
+  padding: 10px 8px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 120ms, border-color 120ms, background 120ms;
+  position: relative;
 }
 
-@media (max-width: 400px) {
+.role-card--empty {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  text-align: center;
+  cursor: default;
+}
+
+.role-card__hint {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  opacity: 0.6;
+}
+.role-card--active .role-card__hint { opacity: 1; }
+
+.role-card__label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.role-card__name {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-1);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.role-card__rating {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* Tablette : 5 cols maintenu */
+
+/* Mobile ≤ 640px : scroll horizontal des cartes */
+@media (max-width: 640px) {
   .role-top-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+  .role-top-grid::-webkit-scrollbar { display: none; }
+
+  .role-card__name { font-size: 11px; }
+  .role-card__rating { font-size: 13px; }
 }
 
 
