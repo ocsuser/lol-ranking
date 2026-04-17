@@ -14,6 +14,8 @@ interface LeagueData {
   id: string;
   label: string;
   players: Player[];
+  teamLogos: Record<string, string>;
+  playerImages: Record<string, string>;
   loading: boolean;
   error: boolean;
 }
@@ -26,12 +28,12 @@ interface Props {
 function useAllLeaguesData(yearConfig: YearConfig) {
   const [leaguesData, setLeaguesData] = useState<LeagueData[]>(
     yearConfig.leagues.filter(l => l.available).map(l => ({
-      id: l.id, label: l.label, players: [], loading: true, error: false,
+      id: l.id, label: l.label, players: [], teamLogos: {}, playerImages: {}, loading: true, error: false,
     }))
   );
   useEffect(() => {
     setLeaguesData(yearConfig.leagues.filter(l => l.available).map(l => ({
-      id: l.id, label: l.label, players: [], loading: true, error: false,
+      id: l.id, label: l.label, players: [], teamLogos: {}, playerImages: {}, loading: true, error: false,
     })));
     yearConfig.leagues.filter(l => l.available).forEach(league => {
       fetch(`/leagues/${league.file}`)
@@ -39,7 +41,7 @@ function useAllLeaguesData(yearConfig: YearConfig) {
         .then((d: ExportData) => {
           const t = d.metadata.tournaments[0]?.name;
           setLeaguesData(prev => prev.map(ld =>
-            ld.id === league.id ? { ...ld, players: enrichPlayers(d.players, t), loading: false } : ld
+            ld.id === league.id ? { ...ld, players: enrichPlayers(d.players, t), teamLogos: d.teamLogos ?? {}, playerImages: d.playerImages ?? {}, loading: false } : ld
           ));
         })
         .catch(() => setLeaguesData(prev => prev.map(ld =>
@@ -109,7 +111,7 @@ function PlayerRadar({ player, color, size = 140 }: { player: Player; color: str
 
 
 /* ── Carte rôle cliquable ─────────────────────── */
-function RoleTopRow({ players }: { players: Record<Role, Player | undefined> }) {
+function RoleTopRow({ players, teamLogos, playerImages }: { players: Record<Role, Player | undefined>; teamLogos: Record<string, string>; playerImages: Record<string, string> }) {
   const [expanded, setExpanded] = useState<Role | null>(null);
   const expandedPlayer = expanded ? players[expanded] : null;
 
@@ -136,6 +138,10 @@ function RoleTopRow({ players }: { players: Record<Role, Player | undefined> }) 
               style={{
                 background: isActive ? `${color}14` : `${color}08`,
                 border: `1px solid ${isActive ? color + '50' : color + '25'}`,
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '10px 12px 10px 12px',
+                gap: 2,
               }}
               onClick={() => setExpanded(isActive ? null : role)}
               onMouseEnter={e => { if (!isActive) e.currentTarget.style.transform = 'translateY(-2px)'; }}
@@ -145,9 +151,23 @@ function RoleTopRow({ players }: { players: Record<Role, Player | undefined> }) 
                 {isActive ? '✕' : '⤢'}
               </div>
               <div className="role-card__label" style={{ color }}>{ROLE_LABEL[role]}</div>
-              <PlayerRadar player={p} color={color} size={80} />
-              <div className="role-card__name">{p.name}</div>
-              <div className="role-card__rating" style={{ color }}>{rating.toFixed(1)}</div>
+
+              {/* Info + radar côte à côte */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 4, marginTop: 4 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+                  <div className="role-card__name" style={{ textAlign: 'left' }}>{p.name}</div>
+                  <div className="role-card__rating" style={{ color }}>{rating.toFixed(1)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    {teamLogos[p.team] && (
+                      <img src={teamLogos[p.team]} alt={p.team} style={{ width: 16, height: 16, objectFit: 'contain', flexShrink: 0 }} />
+                    )}
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.team}</span>
+                  </div>
+                </div>
+                <div style={{ flexShrink: 0 }}>
+                  <PlayerRadar player={p} color={color} size={90} />
+                </div>
+              </div>
             </div>
           );
         })}
@@ -155,13 +175,13 @@ function RoleTopRow({ players }: { players: Record<Role, Player | undefined> }) 
 
       {/* Modal au clic */}
       {expandedPlayer && (
-        <PlayerSheet player={expandedPlayer} onClose={() => setExpanded(null)} />
+        <PlayerSheet player={expandedPlayer} onClose={() => setExpanded(null)} teamLogos={teamLogos} playerImages={playerImages} />
       )}
     </>
   );
 }
 
-function LeagueCard({ ld, onSelect }: { ld: LeagueData; onSelect: () => void }) {
+function LeagueCard({ ld, onSelect }: { ld: LeagueData; onSelect: () => void; }) {
   const sorted = [...ld.players]
     .filter(p => p.rating !== undefined)
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
@@ -192,7 +212,7 @@ function LeagueCard({ ld, onSelect }: { ld: LeagueData; onSelect: () => void }) 
         <div style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>Data unavailable</div>
       ) : (
         <div style={{ padding: '16px 20px 20px' }}>
-          <RoleTopRow players={bestByRole} />
+          <RoleTopRow players={bestByRole} teamLogos={ld.teamLogos} playerImages={ld.playerImages} />
         </div>
       )}
     </div>
