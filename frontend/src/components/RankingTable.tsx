@@ -26,7 +26,7 @@ const ROLES: Role[] = ['TOP', 'JGL', 'MID', 'BOT', 'SUP'];
 const ROLE_LABEL: Record<Role, string> = { TOP: 'Top', JGL: 'Jungle', MID: 'Mid', BOT: 'Bot', SUP: 'Support' };
 
 // Une seule source de vérité pour les largeurs de colonnes
-const GRID = '44px 220px 90px 72px 72px 86px 72px 72px 72px 72px 86px 72px 72px 80px 86px';
+const GRID = '44px 165px 90px 72px 72px 86px 72px 72px 72px 72px 86px 72px 72px 80px 86px';
 //            #    PLAYER LIR  G    W%   KDA  K    D    A    KP%  DPM  CSM  GPM  GD15 CSD15
 
 function kdaClass(kda: number) {
@@ -134,7 +134,7 @@ export default function RankingTable({ players, tournament, tournamentName, team
     padding: CELL_PAD,
     textAlign: 'right',
     fontFamily: 'var(--font-mono)',
-    fontSize: 13,
+    fontSize: 16,
   };
 
   const numHead = (key: SortKey): React.CSSProperties => ({

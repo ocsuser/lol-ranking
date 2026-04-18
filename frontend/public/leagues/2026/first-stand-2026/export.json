@@ -1,25 +1,25 @@
 {
   "metadata": {
-    "exportedAt": "2026-04-17T12:47:06.906Z",
+    "exportedAt": "2026-04-18T23:27:29.186Z",
     "tournaments": [
       {
         "name": "2026 First Stand",
         "league": "International",
         "year": 2026,
         "split": "First Stand",
-        "scrapedAt": "2026-04-17T12:47:06.907Z"
+        "scrapedAt": "2026-04-18T23:27:29.186Z"
       }
     ]
   },
   "teamLogos": {
-    "Bilibili Gaming": "/logos/bilibili_gaming.png",
-    "BNK FearX": "/logos/bnk_fearx.png",
-    "G2 Esports": "/logos/g2_esports.png",
-    "Gen.G": "/logos/gen_g.png",
-    "JD Gaming": "/logos/jd_gaming.png",
-    "LOUD": "/logos/loud.png",
-    "LYON": "/logos/lyon.png",
-    "Team Secret Whales": "/logos/team_secret_whales.png"
+    "Bilibili Gaming": "https://gol.gg/_img/teams_icon/Bilibili_Gaminglogo_profile.webp",
+    "BNK FearX": "https://gol.gg/_img/teams_icon/BNK_FEARXlogo_profile.webp",
+    "G2 Esports": "https://gol.gg/_img/teams_icon/G2_Esportslogo_profile.webp",
+    "Gen.G": "https://gol.gg/_img/teams_icon/Gen.Glogo_profile.webp",
+    "JD Gaming": "https://gol.gg/_img/teams_icon/JD_Gaminglogo_profile.webp",
+    "LOUD": "https://gol.gg/_img/teams_icon/LOUDlogo_profile.webp",
+    "LYON": "https://gol.gg/_img/teams_icon/LYON_29logo_profile.webp",
+    "Team Secret Whales": "https://gol.gg/_img/teams_icon/Team_Secret_Whaleslogo_profile.webp"
   },
   "players": [
     {

@@ -693,7 +693,7 @@ a:hover { opacity: 0.75; }
 
 .ranking-grid {
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .ranking-grid__head {

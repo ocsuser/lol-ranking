@@ -263,5 +263,7 @@ const exportData = {
 
 const withRole = players.filter(p => p.role).length;
 console.log(`✓ logos      ${teamLogos.size} équipes avec logo`);
-fs.writeFileSync(path.join(__dirname, '../../../frontend/public/leagues/lpl-2026/export.json'), JSON.stringify(exportData, null, 2));
+const outPath = path.join(__dirname, '../../../frontend/public/leagues/2026/lpl-2026/export.json');
+const existing = fs.existsSync(outPath) ? JSON.parse(fs.readFileSync(outPath, 'utf8')) : {};
+fs.writeFileSync(outPath, JSON.stringify({ ...exportData, playerImages: existing.playerImages ?? {} }, null, 2));
 console.log(`✓ export     ${COMBINED_NAME} (${players.length} joueurs, ${withRole} avec rôle)`);

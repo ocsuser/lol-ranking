@@ -160,6 +160,7 @@ const exportData = {
 
 const withRole = players.filter(p => p.role).length;
 console.log(`✓ logos      ${teamLogos.size} équipes avec logo`);
-const outPath  = path.join(__dirname, '../../../frontend/public/leagues/first-stand-2026/export.json');
-fs.writeFileSync(outPath, JSON.stringify(exportData, null, 2));
+const outPath  = path.join(__dirname, '../../../frontend/public/leagues/2026/first-stand-2026/export.json');
+const existing = fs.existsSync(outPath) ? JSON.parse(fs.readFileSync(outPath, 'utf8')) : {};
+fs.writeFileSync(outPath, JSON.stringify({ ...exportData, playerImages: existing.playerImages ?? {} }, null, 2));
 console.log(`✓ stats      ${TOURNAMENT} (${players.length} joueurs, ${withRole} avec rôle)`);

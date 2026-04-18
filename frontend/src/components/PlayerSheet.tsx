@@ -72,7 +72,7 @@ function pct(val: number, min: number, max: number) {
 
 function StatBar({ label, value, barPct, color }: { label: string; value: string; barPct: number; color: string }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--separator)' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr auto', alignItems: 'center', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--separator)' }}>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
         {label}
       </span>
