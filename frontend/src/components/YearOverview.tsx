@@ -1,7 +1,4 @@
 import { useEffect, useState } from 'react';
-import {
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip,
-} from 'recharts';
 import type { ExportData, Player, Role } from '../types';
 import { enrichPlayers, getPlayerStats, ROLE_COLOR } from '../utils';
 import { type YearConfig } from '../leagues';
@@ -9,21 +6,7 @@ import PlayerSheet from './PlayerSheet';
 
 const ROLES: Role[] = ['TOP', 'JGL', 'MID', 'BOT', 'SUP'];
 const ROLE_LABEL: Record<Role, string> = { TOP: 'Top', JGL: 'Jungle', MID: 'Mid', BOT: 'Bot', SUP: 'Support' };
-
-function usePolarTickColor() {
-  const [color, setColor] = useState('rgba(240,238,232,0.4)');
-  useEffect(() => {
-    const update = () => {
-      const v = getComputedStyle(document.documentElement).getPropertyValue('--polar-tick').trim();
-      if (v) setColor(v);
-    };
-    update();
-    const obs = new MutationObserver(update);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => obs.disconnect();
-  }, []);
-  return color;
-}
+const ROLE_SHORT: Record<Role, string> = { TOP: 'TOP', JGL: 'JGL', MID: 'MID', BOT: 'BOT', SUP: 'SUP' };
 
 interface LeagueData {
   id: string;
@@ -57,7 +40,9 @@ function useAllLeaguesData(yearConfig: YearConfig) {
         .then((d: ExportData) => {
           const t = d.metadata.tournaments[0]?.name;
           setLeaguesData(prev => prev.map(ld =>
-            ld.id === league.id ? { ...ld, players: enrichPlayers(d.players, t), teamLogos: d.teamLogos ?? {}, playerImages: d.playerImages ?? {}, loading: false } : ld
+            ld.id === league.id
+              ? { ...ld, players: enrichPlayers(d.players, t), teamLogos: d.teamLogos ?? {}, playerImages: d.playerImages ?? {}, loading: false }
+              : ld
           ));
         })
         .catch(() => setLeaguesData(prev => prev.map(ld =>
@@ -68,172 +53,149 @@ function useAllLeaguesData(yearConfig: YearConfig) {
   return leaguesData;
 }
 
-function norm(val: number, min: number, max: number) {
-  return Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
-}
-
-function buildRadarData(player: Player) {
+/* ── Single player hero card ─────────────────────────────── */
+function PlayerHeroCard({
+  player, playerImages, teamLogos, leagueLabel, onOpen,
+}: {
+  player: Player;
+  playerImages: Record<string, string>;
+  teamLogos: Record<string, string>;
+  leagueLabel: string;
+  onOpen: () => void;
+}) {
+  const rating = player.rating ?? 0;
+  const roleColor = ROLE_COLOR[player.role as Role] ?? 'var(--accent)';
+  const imgSrc = playerImages[player.name] || null;
   const stats = getPlayerStats(player);
-  if (!stats) return null;
-  const sub = player.subscores;
-  if (sub) {
-    return [
-      { axis: 'Laning',     val: Math.round(sub.laning),      full: 100 },
-      { axis: 'Damage',     val: Math.round(sub.damage),      full: 100 },
-      { axis: 'Presence',   val: Math.round(sub.presence),    full: 100 },
-      { axis: 'Efficiency', val: Math.round(sub.efficiency),  full: 100 },
-      { axis: 'Win%',       val: norm(stats.winRate, 30, 90), full: 100 },
-      { axis: 'KDA',        val: norm(stats.kda, 1, 7),        full: 100 },
-    ];
-  }
-  return [
-    { axis: 'Win%',  val: norm(stats.winRate, 30, 90), full: 100 },
-    { axis: 'KDA',   val: norm(stats.kda, 1, 7),       full: 100 },
-    { axis: 'DPM',   val: norm(stats.dpm, 150, 920),   full: 100 },
-    { axis: 'CSM',   val: norm(stats.csm, 0.8, 11),    full: 100 },
-    { axis: 'KP%',   val: norm(stats.kp, 40, 80),      full: 100 },
-    { axis: 'GD@15', val: norm(stats.gd15, -400, 400), full: 100 },
-  ];
-}
 
-function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payload: { axis: string; val: number } }[] }) {
-  if (!active || !payload?.length) return null;
-  const d = payload[0].payload;
   return (
-    <div style={{ background: 'var(--bg-3)', border: '1px solid var(--line-med)', borderRadius: 4, padding: '5px 10px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-1)' }}>
-      {d.axis} · <span style={{ color: 'var(--accent)' }}>{d.val.toFixed(0)}</span>
+    <div className="phero" onClick={onOpen}>
+      <div className="phero__scanlines" />
+      <div className="phero__gradient" />
+
+      <img
+        src={imgSrc ?? '/player-images/unknown.png'}
+        alt={player.name}
+        className="phero__img"
+        onError={e => {
+          const el = e.currentTarget as HTMLImageElement;
+          if (el.src.includes('unknown.png')) return;
+          el.src = '/player-images/unknown.png';
+          el.classList.add('phero__img--unknown');
+        }}
+      />
+
+      <div className="phero__content">
+        <div className="phero__eyebrow">
+          <span className="phero__eyebrow-dash">—</span>
+          <span>{leagueLabel}</span>
+          <span className="phero__eyebrow-dot">·</span>
+          <span>CURRENT LEADER</span>
+          {stats && (
+            <>
+              <span className="phero__eyebrow-dot">·</span>
+              <span>{stats.games}G</span>
+            </>
+          )}
+        </div>
+
+        <div className="phero__name">{player.name.toUpperCase()}</div>
+
+        <div className="phero__meta">
+          <span className="phero__role" style={{ color: roleColor }}>
+            {ROLE_SHORT[player.role as Role] ?? player.role}
+          </span>
+          <span className="phero__meta-sep">·</span>
+          {teamLogos[player.team] && (
+            <img src={teamLogos[player.team]} alt={player.team} className="phero__team-logo" />
+          )}
+          <span className="phero__team">{player.team}</span>
+          {player.country && (
+            <>
+              <span className="phero__meta-sep">·</span>
+              <span className="phero__country">{player.country}</span>
+            </>
+          )}
+        </div>
+
+        <div className="phero__rating-row">
+          <span className="phero__rating">{rating.toFixed(1)}</span>
+          <span className="phero__rating-label">RATING</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-function PlayerRadar({ player, color, size = 140 }: { player: Player; color: string; size?: number }) {
-  const data = buildRadarData(player);
-  const tickColor = usePolarTickColor();
-  if (!data) return null;
-  return (
-    <ResponsiveContainer width={size} height={size}>
-      <RadarChart data={data} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-        <PolarGrid gridType="polygon" stroke="var(--polar-grid)" strokeWidth={1} />
-        <PolarAngleAxis
-          dataKey="axis"
-          tick={{ fontFamily: 'Space Mono, monospace', fontSize: 8, fill: tickColor, fontWeight: 700 }}
-          tickLine={false}
-        />
-        <Radar dataKey="val" stroke={color} fill={color} fillOpacity={0.2} strokeWidth={1.5} dot={false} />
-        <Tooltip content={<CustomTooltip />} />
-      </RadarChart>
-    </ResponsiveContainer>
-  );
-}
+/* ── League card ─────────────────────────────────────────── */
+function LeagueCard({ ld, onSelect }: { ld: LeagueData; onSelect: () => void }) {
+  const [selected, setSelected] = useState<Player | null>(null);
 
-
-/* ── Carte rôle cliquable ─────────────────────── */
-function RoleTopRow({ players, teamLogos, playerImages }: { players: Record<Role, Player | undefined>; teamLogos: Record<string, string>; playerImages: Record<string, string> }) {
-  const [expanded, setExpanded] = useState<Role | null>(null);
-  const expandedPlayer = expanded ? players[expanded] : null;
-
-  return (
-    <>
-      <div className="role-top-grid">
-        {ROLES.map(role => {
-          const p = players[role];
-          const color = ROLE_COLOR[role];
-          const isActive = expanded === role;
-
-          if (!p) return (
-            <div key={role} className="role-card role-card--empty">
-              <div className="role-card__label" style={{ color }}>{ROLE_LABEL[role]}</div>
-              <div style={{ color: 'var(--text-4)', fontSize: 11 }}>—</div>
-            </div>
-          );
-
-          const rating = p.rating ?? 0;
-          return (
-            <div
-              key={role}
-              className={`role-card${isActive ? ' role-card--active' : ''}`}
-              style={{
-                background: isActive ? `${color}14` : `${color}08`,
-                border: `1px solid ${isActive ? color + '50' : color + '25'}`,
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                padding: '10px 12px 10px 12px',
-                gap: 2,
-              }}
-              onClick={() => setExpanded(isActive ? null : role)}
-              onMouseEnter={e => { if (!isActive) e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              <div className="role-card__hint" style={{ color: isActive ? color : 'var(--text-4)' }}>
-                {isActive ? '✕' : '⤢'}
-              </div>
-              <div className="role-card__label" style={{ color }}>{ROLE_LABEL[role]}</div>
-
-              {/* Info + radar côte à côte */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 4, marginTop: 4 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-                  <div className="role-card__name" style={{ textAlign: 'left' }}>{p.name}</div>
-                  <div className="role-card__rating" style={{ color }}>{rating.toFixed(1)}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                    {teamLogos[p.team] && (
-                      <img src={teamLogos[p.team]} alt={p.team} style={{ width: 16, height: 16, objectFit: 'contain', flexShrink: 0 }} />
-                    )}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.team}</span>
-                  </div>
-                </div>
-                <div style={{ flexShrink: 0, overflow: 'hidden', maxWidth: 90 }}>
-                  <PlayerRadar player={p} color={color} size={90} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Modal au clic */}
-      {expandedPlayer && (
-        <PlayerSheet player={expandedPlayer} onClose={() => setExpanded(null)} teamLogos={teamLogos} playerImages={playerImages} />
-      )}
-    </>
-  );
-}
-
-function LeagueCard({ ld, onSelect }: { ld: LeagueData; onSelect: () => void; }) {
   const sorted = [...ld.players]
     .filter(p => p.rating !== undefined)
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
 
-  const bestByRole: Record<Role, Player | undefined> = { TOP: undefined, JGL: undefined, MID: undefined, BOT: undefined, SUP: undefined };
+  const bestByRole: Record<Role, Player | undefined> = {
+    TOP: undefined, JGL: undefined, MID: undefined, BOT: undefined, SUP: undefined,
+  };
   for (const role of ROLES) {
     bestByRole[role] = sorted.find(p => p.role === role);
   }
 
   return (
-    <div style={{ background: 'var(--bg-1)', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 46, borderBottom: '1px solid var(--line)', background: 'var(--bg-2)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {ld.logo && (
-            <img src={ld.logo} alt={ld.label} style={{ width: 28, height: 28, objectFit: 'contain' }} />
-          )}
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 22, letterSpacing: '0.06em', color: 'var(--text-1)' }}>{ld.label}</span>
+    <div className="league-card">
+      {/* Header strip */}
+      <div className="league-card__header">
+        <div className="league-card__header-left">
+          {ld.logo && <img src={ld.logo} alt={ld.label} className="league-card__logo" />}
+          <span className="league-card__label">{ld.label}</span>
           {!ld.loading && !ld.error && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-4)', letterSpacing: '0.10em', textTransform: 'uppercase' }}>{ld.players.length} players</span>
+            <span className="league-card__count">{ld.players.length} players</span>
           )}
         </div>
-        <button onClick={onSelect} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--text-3)', background: 'transparent', border: '1px solid var(--line)', borderRadius: 3, padding: '4px 10px', cursor: 'pointer', transition: 'all var(--t-fast)' }}
-          onMouseEnter={e => { const b = e.currentTarget; b.style.color = 'var(--accent)'; b.style.borderColor = 'var(--accent-border)'; b.style.background = 'var(--accent-dim)'; }}
-          onMouseLeave={e => { const b = e.currentTarget; b.style.color = 'var(--text-3)'; b.style.borderColor = 'var(--line)'; b.style.background = 'transparent'; }}
-        >Rankings →</button>
+        <button className="league-card__btn" onClick={onSelect}>Rankings →</button>
       </div>
 
       {ld.loading ? (
-        <div style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text-4)', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Loading…</div>
+        <div className="league-card__state">Loading…</div>
       ) : ld.error ? (
-        <div style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>Data unavailable</div>
+        <div className="league-card__state league-card__state--err">Data unavailable</div>
       ) : (
-        <div style={{ padding: '16px 20px 20px' }}>
-          <RoleTopRow players={bestByRole} teamLogos={ld.teamLogos} playerImages={ld.playerImages} />
+        <div className="phero-grid">
+          {ROLES.map(role => {
+            const p = bestByRole[role];
+            if (!p) return (
+              <div key={role} className="phero phero--empty">
+                <div className="phero__content">
+                  <div className="phero__eyebrow">
+                    <span className="phero__eyebrow-dash">—</span>
+                    <span>{ld.label}</span>
+                  </div>
+                  <div className="phero__name" style={{ color: 'var(--text-4)', fontSize: 32 }}>—</div>
+                  <div className="phero__meta">
+                    <span className="phero__role" style={{ color: ROLE_COLOR[role] }}>
+                      {ROLE_LABEL[role]}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+            return (
+              <PlayerHeroCard
+                key={role}
+                player={p}
+                playerImages={ld.playerImages}
+                teamLogos={ld.teamLogos}
+                leagueLabel={ld.label}
+                onOpen={() => setSelected(p)}
+              />
+            );
+          })}
         </div>
+      )}
+
+      {selected && (
+        <PlayerSheet player={selected} onClose={() => setSelected(null)} teamLogos={ld.teamLogos} playerImages={ld.playerImages} />
       )}
     </div>
   );
@@ -242,7 +204,7 @@ function LeagueCard({ ld, onSelect }: { ld: LeagueData; onSelect: () => void; })
 export default function YearOverview({ yearConfig, onSelectLeague }: Props) {
   const leaguesData = useAllLeaguesData(yearConfig);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="year-overview">
       {leaguesData.map(ld => (
         <LeagueCard key={ld.id} ld={ld} onSelect={() => onSelectLeague(ld.id)} />
       ))}

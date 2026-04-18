@@ -3,23 +3,19 @@ import type { Player, Role } from '../types';
 import { ROLE_COLOR, getPlayerStats, fmt } from '../utils';
 import PlayerModal from './PlayerModal';
 
-const ROLE_ORDER: Role[]               = ['TOP', 'JGL', 'MID', 'BOT', 'SUP'];
-const ROLE_LABEL: Record<Role, string> = { TOP: 'Top', JGL: 'Jgl', MID: 'Mid', BOT: 'Bot', SUP: 'Sup' };
+const ROLE_ORDER: Role[] = ['TOP', 'JGL', 'MID', 'BOT', 'SUP'];
+const ROLE_SHORT: Record<Role, string> = { TOP: 'TOP', JGL: 'JGL', MID: 'MID', BOT: 'BOT', SUP: 'SUP' };
 
-interface Props { players: Player[]; tournament?: string; teamLogos?: Record<string, string>; playerImages?: Record<string, string>; }
+interface Props { players: Player[]; tournament?: string; teamLogos?: Record<string, string>; playerImages?: Record<string, string>; leagueTitle?: string; }
 
-export default function RosterPage({ players, tournament, teamLogos = {}, playerImages = {} }: Props) {
+export default function RosterPage({ players, tournament, teamLogos = {}, playerImages = {}, leagueTitle = '' }: Props) {
   const [selected, setSelected] = useState<Player | null>(null);
 
-  // Collect all teams a player played for in the active tournament context
   const getTeams = (p: Player): string[] => {
     const tournamentTeam = tournament && (p.tournaments[tournament] as any)?.team;
     if (tournamentTeam) return [tournamentTeam];
-    // No direct team on combined: collect unique teams across all sub-tournament entries
     const teams = [...new Set(
-      Object.values(p.tournaments)
-        .map((t: any) => t.team)
-        .filter(Boolean)
+      Object.values(p.tournaments).map((t: any) => t.team).filter(Boolean)
     )] as string[];
     return teams.length > 0 ? teams : (p.team ? [p.team] : []);
   };
@@ -33,91 +29,99 @@ export default function RosterPage({ players, tournament, teamLogos = {}, player
     }
   }
 
-  const teams = Array.from(teamMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  // Compute team LIR = avg rating of one starter per role, sort by it desc
+  const teamEntries = Array.from(teamMap.entries()).map(([name, ps]) => {
+    // All players sorted by role order, then rating desc within same role
+    const starters = [...ps]
+      .filter(p => ROLE_ORDER.includes(p.role as Role))
+      .sort((a, b) => {
+        const ri = ROLE_ORDER.indexOf(a.role as Role) - ROLE_ORDER.indexOf(b.role as Role);
+        if (ri !== 0) return ri;
+        return ((getPlayerStats(b, tournament)?.rating ?? b.rating ?? 0) -
+                (getPlayerStats(a, tournament)?.rating ?? a.rating ?? 0));
+      });
+
+    // Team LIR = avg of best-rated player per role
+    const seenRoles = new Set<Role>();
+    const bestPerRole: Player[] = [];
+    for (const p of starters) {
+      const role = p.role as Role;
+      if (!seenRoles.has(role)) { seenRoles.add(role); bestPerRole.push(p); }
+    }
+
+    const ratings = bestPerRole.map(p => {
+      const st = getPlayerStats(p, tournament);
+      return st?.rating ?? p.rating ?? 0;
+    }).filter(r => r > 0);
+    const teamLIR = ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0;
+    const stats0 = bestPerRole[0] ? getPlayerStats(bestPerRole[0], tournament) : null;
+    const games = stats0?.games ?? 0;
+    const winRate = bestPerRole.length
+      ? bestPerRole.reduce((s, p) => s + (getPlayerStats(p, tournament)?.winRate ?? 0), 0) / bestPerRole.length
+      : 0;
+    return { name, starters, teamLIR, games, winRate };
+  }).sort((a, b) => b.teamLIR - a.teamLIR);
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: 10 }}>
-        {teams.map(([teamName, teamPlayers]) => {
-          const sorted = [...teamPlayers].sort((a, b) => {
-            const ia = ROLE_ORDER.indexOf(a.role as Role);
-            const ib = ROLE_ORDER.indexOf(b.role as Role);
-            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-          });
-
-          const starters = sorted.filter(p => ROLE_ORDER.includes(p.role as Role)).slice(0, 5);
-          const teamWr   = starters.length
-            ? starters.reduce((s, p) => s + (getPlayerStats(p, tournament)?.winRate ?? 0), 0) / starters.length
-            : 0;
-
-          const wrColor = teamWr >= 60 ? 'var(--green)' : teamWr >= 45 ? 'var(--text-2)' : 'var(--red)';
+      <div className="roster-grid">
+        {teamEntries.map(({ name: teamName, starters, teamLIR, games, winRate }, idx) => {
+          const rank = idx + 1;
+          const wrColor = winRate >= 60 ? 'var(--green)' : winRate >= 45 ? 'var(--text-2)' : 'var(--red)';
 
           return (
-            <div key={teamName} className="team-card">
-              <div className="team-card__header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
+            <div key={teamName} className="rcard">
+              {/* Header */}
+              <div className="rcard__header">
+                <div className="rcard__header-left">
+                  <span className="rcard__rank">#{rank}</span>
                   {teamLogos[teamName] && (
-                    <img
-                      src={teamLogos[teamName]}
-                      alt={teamName}
-                      style={{ width: 24, height: 24, objectFit: 'contain', flexShrink: 0 }}
-                    />
+                    <img src={teamLogos[teamName]} alt={teamName} className="rcard__logo" />
                   )}
-                  <span className="team-card__name">{teamName}</span>
+                  <div className="rcard__name-block">
+                    <span className="rcard__name">{teamName.toUpperCase()}</span>
+                    <span className="rcard__meta">RANK {rank < 10 ? `0${rank}` : rank}{leagueTitle ? ` · ${leagueTitle.toUpperCase()}` : ''}</span>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right', flexShrink: 0, paddingLeft: 6 }}>
-                  <div className="team-card__wr" style={{ color: wrColor }}>{fmt(teamWr)}%</div>
-                  <div className="team-card__wr-label">Win Rate</div>
+                <div className="rcard__header-right">
+                  <span className="rcard__lir">{teamLIR > 0 ? teamLIR.toFixed(1) : '—'}</span>
+                  <span className="rcard__lir-label">TEAM LIR</span>
                 </div>
               </div>
 
-              <div>
-                {sorted.map(p => {
-                  const stats     = getPlayerStats(p, tournament);
-                  const roleColor = ROLE_COLOR[p.role as Role] ?? 'var(--text-3)';
-                  const isStarter = ROLE_ORDER.includes(p.role as Role);
-
+              {/* Player rows */}
+              <div className="rcard__rows">
+                {starters.map(p => {
+                  const stats = getPlayerStats(p, tournament);
+                  const role = p.role as Role;
+                  const roleColor = ROLE_COLOR[role] ?? 'var(--text-3)';
+                  const rating = stats?.rating ?? p.rating;
                   return (
-                    <div
-                      key={p.id}
-                      className="team-player-row"
-                      onClick={() => setSelected(p)}
-                      style={{ opacity: isStarter ? 1 : 0.4 }}
-                    >
-                      <span
-                        className="team-player-row__role"
-                        style={{ color: isStarter ? roleColor : 'var(--text-4)' }}
-                      >
-                        {p.role ? ROLE_LABEL[p.role as Role] ?? p.role : '—'}
-                      </span>
-
-                      <span
-                        className="team-player-row__name"
-                        style={{ fontWeight: isStarter ? 600 : 400, color: isStarter ? 'var(--text-1)' : 'var(--text-3)' }}
-                      >
-                        {p.name}
-                      </span>
-
-                      {stats && isStarter ? (
-                        <div className="team-player-row__stats">
-                          {[
-                            { l: 'KDA', v: fmt(stats.kda) },
-                            { l: 'DPM', v: fmt(stats.dpm, 0) },
-                          ].map(s => (
-                            <div key={s.l} className="quick-stat">
-                              <div className="quick-stat__val">{s.v}</div>
-                              <div className="quick-stat__label">{s.l}</div>
-                            </div>
-                          ))}
+                    <div key={p.id} className="rrow" onClick={() => setSelected(p)}>
+                      <span className="rrow__role" style={{ color: roleColor }}>{ROLE_SHORT[role] ?? role}</span>
+                      <span className="rrow__name">{p.name}</span>
+                      <div className="rrow__stats">
+                        <div className="rrow__stat">
+                          <span className="rrow__stat-val">{stats ? stats.kda.toFixed(1) : '—'}</span>
+                          <span className="rrow__stat-label">KDA</span>
                         </div>
-                      ) : (
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-4)' }}>
-                          {stats ? `${stats.games}G` : ''}
-                        </span>
-                      )}
+                        <div className="rrow__stat">
+                          <span className="rrow__stat-val">{stats ? Math.round(stats.dpm) : '—'}</span>
+                          <span className="rrow__stat-label">DPM</span>
+                        </div>
+                      </div>
+                      <span className="rrow__rating" style={{ color: roleColor }}>{rating != null ? rating.toFixed(1) : '—'}</span>
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Footer */}
+              <div className="rcard__footer">
+                <span className="rcard__footer-wr" style={{ color: wrColor }}>
+                  WIN RATE · <strong>{fmt(winRate)}%</strong>
+                </span>
+                <span className="rcard__footer-games">{games} GAMES</span>
               </div>
             </div>
           );

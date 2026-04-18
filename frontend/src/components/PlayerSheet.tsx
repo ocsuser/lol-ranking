@@ -221,9 +221,28 @@ export default function PlayerSheet({ player, onClose, tournament, teamLogos = {
           {/* ── Colonne droite : radar + subscores ── */}
           <div className="sheet-right">
 
-            {playerImages[player.name] && (
-              <img src={playerImages[player.name]} alt={player.name} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', objectPosition: 'top', borderRadius: 6, background: 'var(--bg-3)' }} />
-            )}
+            {(() => {
+              const src = playerImages[player.name];
+              return (
+                <img
+                  src={src ?? '/player-images/unknown.png'}
+                  alt={player.name}
+                  style={{
+                    width: '100%',
+                    aspectRatio: '1/1',
+                    objectFit: 'cover',
+                    objectPosition: 'center top',
+                    borderRadius: 6,
+                    background: 'var(--bg-3)',
+                  }}
+                  onError={e => {
+                    const el = e.currentTarget as HTMLImageElement;
+                    if (el.src.includes('unknown.png')) return;
+                    el.src = '/player-images/unknown.png';
+                  }}
+                />
+              );
+            })()}
 
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Performance Profile

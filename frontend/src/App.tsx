@@ -54,6 +54,14 @@ const PAGE_ICONS: Record<Page, string> = {
   about:    '◎',
 };
 
+const PAGE_NUMS: Record<Page, string> = {
+  overview: '1',
+  rankings: '2',
+  rosters:  '3',
+  compare:  '4',
+  about:    '',
+};
+
 function useTheme() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('theme') as 'dark' | 'light' | null;
@@ -139,10 +147,17 @@ export default function App() {
 
         {/* Logo */}
         <div className="sidebar__logo">
-          <div className="sidebar__logo-title">
-            RATING<span style={{ color: 'var(--accent)' }}>.</span>GG
+          <div className="sidebar__logo-brand">
+            <div className="sidebar__logo-icon">
+              <span>GG</span>
+            </div>
+            <div>
+              <div className="sidebar__logo-title">
+                RATING<span style={{ color: 'var(--accent)' }}>.</span>GG
+              </div>
+              <div className="sidebar__logo-sub">Esports Rankings</div>
+            </div>
           </div>
-          <div className="sidebar__logo-sub">Esports Rankings</div>
         </div>
 
         {/* Year selector */}
@@ -161,41 +176,45 @@ export default function App() {
           </div>
 
           {/* Page nav */}
-          <div className="sidebar__section-label" style={{ marginTop: 8 }}>View</div>
+          <div className="sidebar__section-label" style={{ marginTop: 8 }}>Browse</div>
           <button
             className={`nav-item${page === 'overview' ? ' nav-item--active' : ''}`}
             onClick={() => { setPage('overview'); closeNav(); }}
           >
             <span className="nav-item__icon">{PAGE_ICONS.overview}</span>
-            Overview
+            <span className="nav-item__label">Overview</span>
+            {PAGE_NUMS.overview && <span className="nav-item__num">{PAGE_NUMS.overview}</span>}
           </button>
           <button
             className={`nav-item${page === 'rankings' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
             onClick={() => { league.available && setPage('rankings'); closeNav(); }}
           >
             <span className="nav-item__icon">{PAGE_ICONS.rankings}</span>
-            Rankings
+            <span className="nav-item__label">Rankings</span>
+            {PAGE_NUMS.rankings && <span className="nav-item__num">{PAGE_NUMS.rankings}</span>}
           </button>
           <button
             className={`nav-item${page === 'rosters' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
             onClick={() => { league.available && setPage('rosters'); closeNav(); }}
           >
             <span className="nav-item__icon">{PAGE_ICONS.rosters}</span>
-            Rosters
+            <span className="nav-item__label">Rosters</span>
+            {PAGE_NUMS.rosters && <span className="nav-item__num">{PAGE_NUMS.rosters}</span>}
           </button>
           <button
             className={`nav-item${page === 'compare' ? ' nav-item--active' : ''}`}
             onClick={() => { setPage('compare'); closeNav(); }}
           >
             <span className="nav-item__icon">{PAGE_ICONS.compare}</span>
-            Compare
+            <span className="nav-item__label">Compare</span>
+            {PAGE_NUMS.compare && <span className="nav-item__num">{PAGE_NUMS.compare}</span>}
           </button>
           <button
             className={`nav-item${page === 'about' ? ' nav-item--active' : ''}`}
             onClick={() => { setPage('about'); closeNav(); }}
           >
             <span className="nav-item__icon">{PAGE_ICONS.about}</span>
-            How it works
+            <span className="nav-item__label">How it works</span>
           </button>
         </div>
 
@@ -203,7 +222,7 @@ export default function App() {
 
         {/* Leagues */}
         <div className="sidebar__section">
-          <div className="sidebar__section-label">League</div>
+          <div className="sidebar__section-label">Leagues</div>
           {leagues.map(l => (
             <button
               key={l.id}
@@ -216,10 +235,12 @@ export default function App() {
                   : <span style={{ fontSize: 11 }}>◆</span>
                 }
               </span>
-              {l.label}
-              {!l.available && (
+              <span className="nav-item__label">{l.label}</span>
+              {!l.available ? (
                 <span className="nav-item__badge">SOON</span>
-              )}
+              ) : l.region ? (
+                <span className="nav-item__region">{l.region}</span>
+              ) : null}
               {error && selection.leagueId === l.id && (
                 <span className="nav-item__badge" style={{ color: 'var(--red)', borderColor: 'rgba(248,113,113,0.2)' }}>ERR</span>
               )}
@@ -232,9 +253,10 @@ export default function App() {
           <>
             <div className="sidebar__divider" />
             <div className="sidebar__splits">
-              <div className="sidebar__splits-label">Split</div>
+              <div className="sidebar__splits-label">{league.label} Splits</div>
               {league.splits.map(s => {
                 const activeParent = league.splits ? parentSplit(league.splits, splitId)?.id === s.id : false;
+                const splitGames = data?.metadata.tournaments.find(t => t.name === s.tournament)?.totalGames;
 
                 if (s.children && s.children.length > 0) {
                   return (
@@ -252,15 +274,19 @@ export default function App() {
                       {/* Children — shown only when parent is active */}
                       {activeParent && (
                         <div className="split-children">
-                          {s.children.map(c => (
-                            <button
-                              key={c.id}
-                              className={`split-btn split-btn--child${splitId === c.id ? ' split-btn--active' : ''}`}
-                              onClick={() => { setSplitId(c.id); closeNav(); }}
-                            >
-                              {c.label}
-                            </button>
-                          ))}
+                          {s.children.map(c => {
+                            const childGames = data?.metadata.tournaments.find(t => t.name === c.tournament)?.totalGames;
+                            return (
+                              <button
+                                key={c.id}
+                                className={`split-btn split-btn--child${splitId === c.id ? ' split-btn--active' : ''}`}
+                                onClick={() => { setSplitId(c.id); closeNav(); }}
+                              >
+                                <span>{c.label}</span>
+                                {childGames != null && <span className="split-btn__games">{childGames}</span>}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -273,7 +299,8 @@ export default function App() {
                     className={`split-btn${activeParent ? ' split-btn--active' : ''}`}
                     onClick={() => { setSplitId(s.id); closeNav(); }}
                   >
-                    {s.label}
+                    <span>{s.label}</span>
+                    {splitGames != null && <span className="split-btn__games">{splitGames}</span>}
                   </button>
                 );
               })}
@@ -284,19 +311,6 @@ export default function App() {
         {/* Footer */}
         <div className="sidebar__footer">
           <div>Data · <strong style={{ color: 'var(--text-3)' }}>gol.gg</strong></div>
-          <button
-            onClick={toggleTheme}
-            style={{
-              marginTop: 10, width: '100%', padding: '6px 0',
-              background: 'var(--bg-3)', border: '1px solid var(--line)',
-              borderRadius: 'var(--r-sm)', cursor: 'pointer',
-              color: 'var(--text-3)', fontFamily: 'var(--font-mono)',
-              fontSize: 9, letterSpacing: '0.10em', textTransform: 'uppercase',
-              transition: 'all var(--t-fast)',
-            }}
-          >
-            {currentTheme === 'dark' ? '☀ Light' : '☾ Dark'}
-          </button>
         </div>
       </nav>
 
@@ -308,14 +322,36 @@ export default function App() {
           <button className="burger-btn" onClick={() => setNavOpen(o => !o)} aria-label="Menu">
             <span /><span /><span />
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
             {league.logo && (page === 'rankings' || page === 'rosters') && (
-              <img src={league.logo} alt={league.label} style={{ width: 40, height: 40, objectFit: 'contain' }} />
+              <img src={league.logo} alt={league.label} style={{ width: 40, height: 40, objectFit: 'contain', flexShrink: 0 }} />
             )}
-            <div>
-              <div className="page-header__eyebrow">{pageEyebrow}</div>
-              <h1 className="page-header__title">{pageTitle}</h1>
+            <div style={{ minWidth: 0 }}>
+              <div className="page-header__eyebrow">
+                {(page === 'rankings' || page === 'rosters') && league.available
+                  ? `${league.title} · ${pageEyebrow.toUpperCase()}`
+                  : pageEyebrow.toUpperCase()
+                }
+              </div>
+              <h1 className="page-header__title">
+                {pageTitle.toUpperCase()}
+                {page === 'rosters' && data && Object.keys(teamLogos).length > 0 && (
+                  <span className="page-header__title-count"> · {Object.keys(teamLogos).length} Teams</span>
+                )}
+                {page === 'rankings' && data && players.length > 0 && (
+                  <span className="page-header__title-count"> · {players.length} Players</span>
+                )}
+              </h1>
             </div>
+          </div>
+          <div className="page-header__actions">
+            <button
+              className="page-header__icon-btn"
+              onClick={toggleTheme}
+              title={currentTheme === 'dark' ? 'Light mode' : 'Dark mode'}
+            >
+              {currentTheme === 'dark' ? '☀' : '☾'}
+            </button>
           </div>
         </div>
 
@@ -349,7 +385,7 @@ export default function App() {
                 />
               )}
               {page === 'rosters' && (
-                <RosterPage players={players} tournament={activeTournament} teamLogos={teamLogos} playerImages={playerImages} />
+                <RosterPage players={players} tournament={activeTournament} teamLogos={teamLogos} playerImages={playerImages} leagueTitle={league.title} />
               )}
             </>
           )}
