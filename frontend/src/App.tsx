@@ -6,9 +6,11 @@ import RosterPage from './components/RosterPage';
 import YearOverview from './components/YearOverview';
 import AboutPage from './components/AboutPage';
 import ComparePage from './components/ComparePage';
+import NewsPage from './components/NewsPage';
+import MatchesPage from './components/MatchesPage';
 import { YEARS, type LeagueConfig, type SplitConfig } from './leagues';
 
-type Page = 'overview' | 'rankings' | 'rosters' | 'compare' | 'about';
+type Page = 'overview' | 'rankings' | 'rosters' | 'compare' | 'matches' | 'news' | 'about';
 
 function useExportData(league: LeagueConfig) {
   const [data, setData]       = useState<ExportData | null>(null);
@@ -51,6 +53,8 @@ const PAGE_ICONS: Record<Page, string> = {
   rankings: '▤',
   rosters:  '⊞',
   compare:  '⇄',
+  matches:  '▶',
+  news:     '◉',
   about:    '◎',
 };
 
@@ -59,6 +63,8 @@ const PAGE_NUMS: Record<Page, string> = {
   rankings: '2',
   rosters:  '3',
   compare:  '4',
+  matches:  '5',
+  news:     '6',
   about:    '',
 };
 
@@ -127,6 +133,8 @@ export default function App() {
     ? `${selection.year} Season`
     : page === 'about' ? 'Rating.GG'
     : page === 'compare' ? 'Compare'
+    : page === 'matches' ? 'Matches'
+    : page === 'news' ? 'News'
     : league.title;
 
   const pageEyebrow = page === 'overview'
@@ -134,6 +142,8 @@ export default function App() {
     : page === 'rankings' ? 'Rankings'
     : page === 'rosters' ? 'Team Rosters'
     : page === 'compare' ? 'Player Comparison'
+    : page === 'matches' ? 'Schedule & Results'
+    : page === 'news' ? 'Latest News'
     : 'How it works';
 
   return (
@@ -208,6 +218,22 @@ export default function App() {
             <span className="nav-item__icon">{PAGE_ICONS.compare}</span>
             <span className="nav-item__label">Compare</span>
             {PAGE_NUMS.compare && <span className="nav-item__num">{PAGE_NUMS.compare}</span>}
+          </button>
+          <button
+            className={`nav-item${page === 'matches' ? ' nav-item--active' : ''}`}
+            onClick={() => { setPage('matches'); closeNav(); }}
+          >
+            <span className="nav-item__icon">{PAGE_ICONS.matches}</span>
+            <span className="nav-item__label">Matches</span>
+            {PAGE_NUMS.matches && <span className="nav-item__num">{PAGE_NUMS.matches}</span>}
+          </button>
+          <button
+            className={`nav-item${page === 'news' ? ' nav-item--active' : ''}`}
+            onClick={() => { setPage('news'); closeNav(); }}
+          >
+            <span className="nav-item__icon">{PAGE_ICONS.news}</span>
+            <span className="nav-item__label">News</span>
+            {PAGE_NUMS.news && <span className="nav-item__num">{PAGE_NUMS.news}</span>}
           </button>
           <button
             className={`nav-item${page === 'about' ? ' nav-item--active' : ''}`}
@@ -357,7 +383,11 @@ export default function App() {
         </div>
 
         <main className="page">
-          {page === 'about' ? (
+          {page === 'matches' ? (
+            <MatchesPage />
+          ) : page === 'news' ? (
+            <NewsPage />
+          ) : page === 'about' ? (
             <AboutPage />
           ) : page === 'compare' ? (
             <ComparePage />

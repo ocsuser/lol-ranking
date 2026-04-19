@@ -16,6 +16,8 @@ Ligues supportées : **LCK**, **LPL**, **LEC**, **LCS**, **LFL**, **First Stand*
 - **Rankings** — classement complet des joueurs d'une ligue, filtrable par rôle et split. Onglet **Teams** intégré : classement des équipes par LIR moyen (meilleur joueur par rôle), avec détail du LIR par poste
 - **Rosters** — vue par équipe avec les joueurs et leurs stats
 - **Compare** — comparateur inter-ligues : sélection de deux joueurs (filtres année / ligue / rôle / recherche), radar superposé et tableau de stats en duel avec barres miroir depuis le centre
+- **Matches** — calendrier et résultats des matchs (LCK, LPL, LEC, LCS, First Stand), filtrables par état (upcoming / completed) et par ligue. Données live depuis l'API Lolesports
+- **News** — articles esport LoL en français (Team-AAA), mis à jour via `npm run news`
 - **How it works** — explication du système LIR
 
 ## Lancer l'application
@@ -35,6 +37,7 @@ npm run scrape:2026    # scrapers 2026 uniquement
 npm run scrape:2025    # scrapers 2025 (LCK, LPL, LEC, LFL, First Stand, MSI, Worlds)
 npm run logos          # télécharge les logos d'équipe depuis l'API Lolesports
 npm run player-images  # télécharge les photos de joueurs
+npm run news           # scrape les derniers articles (Team-AAA RSS) → public/news.json
 ```
 
 Pour détecter de nouveaux tournois sur gol.gg :

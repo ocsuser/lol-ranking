@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "scrape": "npm run scrape:2026",
+    "news": "tsx scripts/scrape-news.ts",
     "logos": "tsx scripts/fetch-logos.ts",
     "player-images": "tsx scripts/fetch-player-images.ts",
     "scrape:2026": "tsx leagues/2026/lck-2026/scrape.ts && tsx leagues/2026/lpl-2026/scrape.ts && tsx leagues/2026/lec-2026/scrape.ts && tsx leagues/2026/lcs-2026/scrape.ts && tsx leagues/2026/first-stand-2026/scrape.ts && tsx leagues/2026/lfl-2026/scrape.ts",
