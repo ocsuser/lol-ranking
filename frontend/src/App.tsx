@@ -372,7 +372,7 @@ export default function App() {
 
         <main className="page">
           {page === 'matches' ? (
-            <MatchesPage leagues={leagues} year={selection.year} />
+            <MatchesPage leagues={leagues} year={selection.year} selectedLeagueLabel={league.lolEsportsId ? league.label : null} />
           ) : page === 'news' ? (
             <NewsPage />
           ) : page === 'about' ? (

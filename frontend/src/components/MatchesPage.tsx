@@ -91,18 +91,18 @@ function MatchRow({ match }: { match: Match }) {
   );
 }
 
-interface Props { leagues: LeagueConfig[]; year: number; }
+interface Props { leagues: LeagueConfig[]; year: number; selectedLeagueLabel: string | null; }
 
-export default function MatchesPage({ leagues, year }: Props) {
+export default function MatchesPage({ leagues, year, selectedLeagueLabel }: Props) {
   const fetchableLeagues = leagues.filter(l => l.lolEsportsId);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');
-  const [leagueFilter, setLeagueFilter] = useState<string>('all');
+  const leagueFilter = selectedLeagueLabel ?? 'all';
 
   useEffect(() => {
-    setMatches([]); setLoading(true); setLeagueFilter('all');
+    setMatches([]); setLoading(true);
     const yearStart = new Date(`${year}-01-01T00:00:00Z`).getTime();
     const fetchAll = async () => {
       const all: Match[] = [];
@@ -154,10 +154,13 @@ export default function MatchesPage({ leagues, year }: Props) {
         } catch {}
       }));
       all.sort((a, b) => {
-        if (a.state === 'unstarted' && b.state === 'completed') return -1;
-        if (b.state === 'unstarted' && a.state === 'completed') return 1;
-        if (a.state === 'unstarted') return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-        return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+        const ta = new Date(a.startTime).getTime();
+        const tb = new Date(b.startTime).getTime();
+        // upcoming first (ascending), then completed (descending)
+        if (a.state === 'unstarted' && b.state !== 'unstarted') return -1;
+        if (b.state === 'unstarted' && a.state !== 'unstarted') return 1;
+        if (a.state === 'unstarted') return ta - tb;
+        return tb - ta;
       });
       setMatches(all); setLoading(false);
     };
@@ -192,15 +195,6 @@ export default function MatchesPage({ leagues, year }: Props) {
           {(['all', 'upcoming', 'completed'] as MatchFilter[]).map(f => (
             <button key={f} className={`mfilter-btn${matchFilter === f ? ' mfilter-btn--active' : ''}`} onClick={() => setMatchFilter(f)}>
               {f === 'all' ? 'All' : f === 'upcoming' ? 'Upcoming' : 'Results'}
-            </button>
-          ))}
-        </div>
-        <div className="matches-filters matches-filters--leagues">
-          <button className={`mfilter-btn${leagueFilter === 'all' ? ' mfilter-btn--active' : ''}`} onClick={() => setLeagueFilter('all')}>All</button>
-          {fetchableLeagues.map(l => (
-            <button key={l.id} className={`mfilter-btn${leagueFilter === l.label ? ' mfilter-btn--active' : ''}`} onClick={() => setLeagueFilter(l.label)}>
-              {l.logo && <img src={l.logo} alt={l.label} className="mfilter-btn__logo" />}
-              {l.label}
             </button>
           ))}
         </div>
