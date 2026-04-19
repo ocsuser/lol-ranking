@@ -104,7 +104,6 @@ export default function MatchesPage({ leagues, year }: Props) {
   useEffect(() => {
     setMatches([]); setLoading(true); setLeagueFilter('all');
     const yearStart = new Date(`${year}-01-01T00:00:00Z`).getTime();
-    const yearEnd   = new Date(`${year}-12-31T23:59:59Z`).getTime();
     const fetchAll = async () => {
       const all: Match[] = [];
       await Promise.all(fetchableLeagues.map(async league => {
