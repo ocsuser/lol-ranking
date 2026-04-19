@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLang } from '../i18n';
 
 interface Article {
   title: string;
@@ -44,26 +45,40 @@ function ArticleCard({ article }: { article: Article }) {
 }
 
 export default function NewsPage() {
+  const { t } = useLang();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [spinning, setSpinning] = useState(false);
 
-  useEffect(() => {
-    fetch('/news.json')
+  function loadArticles() {
+    return fetch('/news.json')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.articles) setArticles(d.articles); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => {});
+  }
+
+  useEffect(() => { loadArticles().finally(() => setLoading(false)); }, []);
+
+  function handleRefresh() {
+    setSpinning(true);
+    loadArticles().finally(() => setTimeout(() => setSpinning(false), 400));
+  }
 
   return (
     <>
       <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ fontSize: 11, color: 'var(--text-4)', fontFamily: 'var(--font-mono)' }}>
-          {articles.length} articles · Team-AAA
+          {t.articlesCount(articles.length)}
         </span>
-        <span style={{ fontSize: 11, color: 'var(--text-4)', fontFamily: 'var(--font-body)' }}>
-          Run <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>npm run news</code> to refresh
-        </span>
+        <button onClick={handleRefresh} className="news-refresh-btn" disabled={spinning}>
+          <svg
+            width="11" height="11" viewBox="0 0 12 12" fill="none"
+            style={{ transition: 'transform 400ms ease', transform: spinning ? 'rotate(360deg)' : 'rotate(0deg)' }}
+          >
+            <path d="M10.5 6A4.5 4.5 0 1 1 6 1.5a4.47 4.47 0 0 1 3 1.15V1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+          {t.refreshLabel}
+        </button>
       </div>
 
       {loading ? (
@@ -74,7 +89,7 @@ export default function NewsPage() {
         </div>
       ) : articles.length === 0 ? (
         <div className="state-center">
-          <div className="state-center__sub">No articles — run <code>npm run news</code> to fetch</div>
+          <div className="state-center__sub">{t.noArticles}</div>
         </div>
       ) : (
         <div className="news-articles-list">

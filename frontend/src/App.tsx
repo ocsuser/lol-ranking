@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
+import { useLang } from './i18n';
 import type { ExportData, Player } from './types';
 import { enrichPlayers } from './utils';
 import RankingTable from './components/RankingTable';
@@ -48,14 +49,14 @@ function parentSplit(splits: SplitConfig[], id: string | null): SplitConfig | nu
   return splits[0] ?? null;
 }
 
-const PAGE_ICONS: Record<Page, string> = {
-  overview: '◈',
-  rankings: '▤',
-  rosters:  '⊞',
-  compare:  '⇄',
-  matches:  '▶',
-  news:     '◉',
-  about:    '◎',
+const NAV_ICONS: Record<Page, JSX.Element> = {
+  overview: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2"/><rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2"/></svg>,
+  rankings: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 11h2.5V6H1v5ZM5.75 11h2.5V3h-2.5v8ZM10.5 11H13V7.5h-2.5V11Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>,
+  rosters:  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="5" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.2"/><path d="M1 12c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><circle cx="10.5" cy="4.5" r="1.5" stroke="currentColor" strokeWidth="1.1"/><path d="M12 12c0-1.7-1.1-3.1-2.5-3.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>,
+  compare:  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5 12 5l-2.5 2.5M4.5 11.5 2 9l2.5-2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 5H5a3 3 0 0 0 0 6M2 9h7a3 3 0 0 0 0-6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  matches:  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5.5" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><rect x="7.5" y="1" width="5.5" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.2"/></svg>,
+  news:     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M4 5.5h6M4 7.5h4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg>,
+  about:    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2"/><path d="M7 6.5v4M7 4.5v.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
 };
 
 const PAGE_NUMS: Record<Page, string> = {
@@ -85,6 +86,7 @@ function useTheme() {
 
 export default function App() {
   const { theme: currentTheme, toggle: toggleTheme } = useTheme();
+  const { lang, t, setLang } = useLang();
   const [page, setPage]       = useState<Page>('overview');
   const [splitId, setSplitId] = useState<string | null>(null);
   const [navOpen, setNavOpen] = useState(false);
@@ -130,21 +132,21 @@ export default function App() {
   const playerImages: Record<string, string> = data?.playerImages ?? {};
 
   const pageTitle = page === 'overview'
-    ? `${selection.year} Season`
+    ? t.season_label(selection.year)
     : page === 'about' ? 'Rating.GG'
-    : page === 'compare' ? 'Compare'
-    : page === 'matches' ? 'Matches'
-    : page === 'news' ? 'News'
+    : page === 'compare' ? t.compare
+    : page === 'matches' ? t.matches
+    : page === 'news' ? t.news
     : league.title;
 
   const pageEyebrow = page === 'overview'
-    ? 'Year Overview'
-    : page === 'rankings' ? 'Rankings'
-    : page === 'rosters' ? 'Team Rosters'
-    : page === 'compare' ? 'Player Comparison'
-    : page === 'matches' ? 'Schedule & Results'
-    : page === 'news' ? 'Latest News'
-    : 'How it works';
+    ? t.yearOverview
+    : page === 'rankings' ? t.rankings
+    : page === 'rosters' ? t.teamRosters
+    : page === 'compare' ? t.playerComparison
+    : page === 'matches' ? t.scheduleResults
+    : page === 'news' ? t.latestNews
+    : t.howItWorks;
 
   return (
     <div className="app-shell">
@@ -159,20 +161,23 @@ export default function App() {
         <div className="sidebar__logo">
           <div className="sidebar__logo-brand">
             <div className="sidebar__logo-icon">
-              <span>GG</span>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M3 9h4v4H3zM3 3h4v4H3zM11 3h4v4h-4z" fill="white" fillOpacity="0.9"/>
+                <path d="M11 9h4v2h-2v2h-2V9z" fill="white" fillOpacity="0.9"/>
+              </svg>
             </div>
             <div>
               <div className="sidebar__logo-title">
                 RATING<span className="sidebar__logo-dot">.</span>GG
               </div>
-              <div className="sidebar__logo-sub">Esports Rankings</div>
+              <div className="sidebar__logo-sub">{t.esportsRankings}</div>
             </div>
           </div>
         </div>
 
         {/* Year selector */}
         <div className="sidebar__section">
-          <div className="sidebar__section-label">Season</div>
+          <div className="sidebar__section-label">{t.season}</div>
           <div className="sidebar__year-row">
             {YEARS.map(y => (
               <button
@@ -186,61 +191,61 @@ export default function App() {
           </div>
 
           {/* Page nav */}
-          <div className="sidebar__section-label" style={{ marginTop: 8 }}>Browse</div>
+          <div className="sidebar__section-label" style={{ marginTop: 8 }}>{t.browse}</div>
           <button
             className={`nav-item${page === 'overview' ? ' nav-item--active' : ''}`}
             onClick={() => { setPage('overview'); closeNav(); }}
           >
-            <span className="nav-item__icon">{PAGE_ICONS.overview}</span>
-            <span className="nav-item__label">Overview</span>
+            <span className="nav-item__icon">{NAV_ICONS.overview}</span>
+            <span className="nav-item__label">{t.overview}</span>
             {PAGE_NUMS.overview && <span className="nav-item__num">{PAGE_NUMS.overview}</span>}
           </button>
           <button
             className={`nav-item${page === 'rankings' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
             onClick={() => { league.available && setPage('rankings'); closeNav(); }}
           >
-            <span className="nav-item__icon">{PAGE_ICONS.rankings}</span>
-            <span className="nav-item__label">Rankings</span>
+            <span className="nav-item__icon">{NAV_ICONS.rankings}</span>
+            <span className="nav-item__label">{t.rankings}</span>
             {PAGE_NUMS.rankings && <span className="nav-item__num">{PAGE_NUMS.rankings}</span>}
           </button>
           <button
             className={`nav-item${page === 'rosters' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
             onClick={() => { league.available && setPage('rosters'); closeNav(); }}
           >
-            <span className="nav-item__icon">{PAGE_ICONS.rosters}</span>
-            <span className="nav-item__label">Rosters</span>
+            <span className="nav-item__icon">{NAV_ICONS.rosters}</span>
+            <span className="nav-item__label">{t.rosters}</span>
             {PAGE_NUMS.rosters && <span className="nav-item__num">{PAGE_NUMS.rosters}</span>}
           </button>
           <button
             className={`nav-item${page === 'compare' ? ' nav-item--active' : ''}`}
             onClick={() => { setPage('compare'); closeNav(); }}
           >
-            <span className="nav-item__icon">{PAGE_ICONS.compare}</span>
-            <span className="nav-item__label">Compare</span>
+            <span className="nav-item__icon">{NAV_ICONS.compare}</span>
+            <span className="nav-item__label">{t.compare}</span>
             {PAGE_NUMS.compare && <span className="nav-item__num">{PAGE_NUMS.compare}</span>}
           </button>
           <button
             className={`nav-item${page === 'matches' ? ' nav-item--active' : ''}`}
             onClick={() => { setPage('matches'); closeNav(); }}
           >
-            <span className="nav-item__icon">{PAGE_ICONS.matches}</span>
-            <span className="nav-item__label">Matches</span>
+            <span className="nav-item__icon">{NAV_ICONS.matches}</span>
+            <span className="nav-item__label">{t.matches}</span>
             {PAGE_NUMS.matches && <span className="nav-item__num">{PAGE_NUMS.matches}</span>}
           </button>
           <button
             className={`nav-item${page === 'news' ? ' nav-item--active' : ''}`}
             onClick={() => { setPage('news'); closeNav(); }}
           >
-            <span className="nav-item__icon">{PAGE_ICONS.news}</span>
-            <span className="nav-item__label">News</span>
+            <span className="nav-item__icon">{NAV_ICONS.news}</span>
+            <span className="nav-item__label">{t.news}</span>
             {PAGE_NUMS.news && <span className="nav-item__num">{PAGE_NUMS.news}</span>}
           </button>
           <button
             className={`nav-item${page === 'about' ? ' nav-item--active' : ''}`}
             onClick={() => { setPage('about'); closeNav(); }}
           >
-            <span className="nav-item__icon">{PAGE_ICONS.about}</span>
-            <span className="nav-item__label">How it works</span>
+            <span className="nav-item__icon">{NAV_ICONS.about}</span>
+            <span className="nav-item__label">{t.howItWorks}</span>
           </button>
         </div>
 
@@ -359,6 +364,17 @@ export default function App() {
             </div>
           </div>
           <div className="page-header__actions">
+            <div className="lang-toggle">
+              {(['en', 'fr'] as const).map(l => (
+                <button
+                  key={l}
+                  className={`lang-toggle__btn${lang === l ? ' lang-toggle__btn--active' : ''}`}
+                  onClick={() => setLang(l)}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <button
               className="page-header__icon-btn"
               onClick={toggleTheme}
@@ -384,7 +400,7 @@ export default function App() {
           ) : !league.available ? (
             <div className="state-center">
               <div className="state-center__label">{league.label}</div>
-              <div className="state-center__sub">Coming soon</div>
+              <div className="state-center__sub">{t.comingSoon}</div>
             </div>
           ) : loading ? (
             <div className="skeleton-table">
@@ -410,7 +426,11 @@ export default function App() {
           )}
 
           <footer className="footer">
-            <p>Data · <strong>gol.gg</strong> · LIR percentile rating by role</p>
+            <span className="footer__item">Data · <strong>gol.gg</strong></span>
+            <span className="footer__sep">·</span>
+            <span className="footer__item">Schedule · <strong>lolesports.com</strong></span>
+            <span className="footer__sep">·</span>
+            <span className="footer__item footer__item--muted">Not affiliated with Riot Games</span>
           </footer>
         </main>
       </div>

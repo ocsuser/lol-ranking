@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { useLang } from '../i18n';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip,
 } from 'recharts';
@@ -202,6 +203,7 @@ interface SelectorProps {
 }
 
 function PlayerSelector({ pools, selectedPlayer, onSelect, color, slot, teamLogos }: SelectorProps) {
+  const { t } = useLang();
   const [search, setSearch] = useState('');
   const availableYears = useMemo(() => [...new Set(pools.map(p => p.year))].sort((a, b) => b - a), [pools]);
   const [filterYear, setFilterYear] = useState<number | null>(Math.max(...YEARS.map(y => y.year)));
@@ -271,7 +273,7 @@ function PlayerSelector({ pools, selectedPlayer, onSelect, color, slot, teamLogo
             </div>
           </div>
         ) : (
-          <div className="csel__empty">Select a player…</div>
+          <div className="csel__empty">{t.selectPlayer}</div>
         )}
         <span className="csel__chevron" style={{ color }}>{open ? '▴' : '▾'}</span>
       </button>
@@ -331,7 +333,7 @@ function PlayerSelector({ pools, selectedPlayer, onSelect, color, slot, teamLogo
               );
             })}
             {allPlayers.length === 0 && (
-              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>No players found</div>
+              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>{t.noPlayersFound}</div>
             )}
           </div>
         </div>
@@ -379,6 +381,7 @@ function PlayerHero({ player, pool, color, align }: { player: Player; pool: Leag
 /* ── Main ───────────────────────────────────────── */
 
 export default function ComparePage() {
+  const { t } = useLang();
   const pools = useAllPlayers();
   const tickColor = usePolarTickColor();
   const colorA = useCSSVar('--compare-a', '#60A5FA');
@@ -475,13 +478,17 @@ export default function ComparePage() {
               </div>
 
               <div className="cpage__disclaimer">
-                LIR ratings are percentile-based within each league — cross-league comparison reflects raw stats
+                {t.crossLeagueNote}
               </div>
             </>
           ) : (
             <div className="cpage__empty">
-              <div className="cpage__empty-icon">⇄</div>
-              <div>Select two players to compare</div>
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style={{ opacity: 0.2, marginBottom: 4 }}>
+                <path d="M22 6 28 12l-6 6M10 26 4 20l6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M28 12H12a6 6 0 0 0 0 12M4 20h16a6 6 0 0 0 0-12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <div>{t.selectTwoPlayers}</div>
+              <div style={{ fontSize: 9, opacity: 0.5, marginTop: 2 }}>{t.selectTwoSub}</div>
             </div>
           )}
         </div>

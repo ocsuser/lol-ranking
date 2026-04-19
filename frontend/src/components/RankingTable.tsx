@@ -4,6 +4,7 @@ import { fmt, fmtSign, getPlayerStats } from '../utils';
 import RoleTag from './RoleTag';
 import PlayerModal from './PlayerModal';
 import TeamRankingsPage from './TeamRankingsPage';
+import { useLang } from '../i18n';
 
 type SortKey = 'rating' | keyof TournamentStats | 'name';
 
@@ -80,6 +81,7 @@ interface Props {
 }
 
 export default function RankingTable({ players, tournament, tournamentName, teamLogos = {}, playerImages = {} }: Props) {
+  const { t } = useLang();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolledEnd, setScrolledEnd] = useState(false);
 
@@ -101,8 +103,8 @@ export default function RankingTable({ players, tournament, tournamentName, team
       <>
         <div className="ranking-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
           <div className="filters" style={{ marginBottom: 0 }}>
-            <button className="filter-btn filter-btn--active" onClick={() => {}}>Teams</button>
-            <button className="filter-btn" onClick={() => setView('ALL')}>All</button>
+            <button className="filter-btn filter-btn--active" onClick={() => {}}>{t.teams}</button>
+            <button className="filter-btn" onClick={() => setView('ALL')}>{t.all}</button>
             {ROLES.map(r => (
               <button key={r} className={`filter-btn filter-btn--${r.toLowerCase()}`} onClick={() => setView(r)}>{ROLE_LABEL[r]}</button>
             ))}
@@ -174,9 +176,12 @@ export default function RankingTable({ players, tournament, tournamentName, team
   });
 
   const sortIcon = (key: SortKey) => (
-    <span style={{ fontSize: 8, marginLeft: 2, opacity: sortKey === key ? 0.9 : 0.2 }}>
-      {sortKey === key ? (sortDir === 'desc' ? '▼' : '▲') : '▼'}
-    </span>
+    <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ marginLeft: 3, opacity: sortKey === key ? 1 : 0.18, display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
+      {sortKey === key && sortDir === 'asc'
+        ? <path d="M4 1L7 6H1L4 1Z" fill="currentColor"/>
+        : <path d="M4 7L1 2H7L4 7Z" fill="currentColor"/>
+      }
+    </svg>
   );
 
   return (
@@ -184,8 +189,8 @@ export default function RankingTable({ players, tournament, tournamentName, team
       {/* ── Toolbar ───────────────────────────── */}
       <div className="ranking-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
         <div className="filters" style={{ marginBottom: 0 }}>
-          <button className="filter-btn" onClick={() => setView('TEAMS')}>Teams</button>
-          <button className={`filter-btn ${view === 'ALL' ? 'filter-btn--active' : ''}`} onClick={() => setView('ALL')}>All</button>
+          <button className="filter-btn" onClick={() => setView('TEAMS')}>{t.teams}</button>
+          <button className={`filter-btn ${view === 'ALL' ? 'filter-btn--active' : ''}`} onClick={() => setView('ALL')}>{t.all}</button>
           {ROLES.map(r => (
             <button
               key={r}
@@ -197,12 +202,12 @@ export default function RankingTable({ players, tournament, tournamentName, team
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <input
             className="search-input"
-            placeholder="Search player or team…"
+            placeholder={t.searchPlaceholder}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
           <span style={{ fontSize: 11, color: 'var(--text-4)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
-            {filtered.length} players{tournamentName ? ` · ${tournamentName}` : ''}
+            {t.players(filtered.length, tournamentName)}
           </span>
         </div>
       </div>

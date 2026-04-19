@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { LeagueConfig } from '../leagues';
+import { useLang } from '../i18n';
 
 const LS_KEY = '0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z';
 const LS_BASE = 'https://esports-api.lolesports.com/persisted/gw';
@@ -15,17 +16,17 @@ interface Match {
 
 type MatchFilter = 'all' | 'upcoming' | 'completed';
 
-function formatDayLabel(dateStr: string): string {
+function formatDayLabel(dateStr: string, today_: string, tomorrow_: string, yesterday_: string, locale: string): string {
   const d = new Date(dateStr);
   const today = new Date();
   const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
   const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
   const sameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  if (sameDay(d, today)) return 'Today';
-  if (sameDay(d, tomorrow)) return 'Tomorrow';
-  if (sameDay(d, yesterday)) return 'Yesterday';
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  if (sameDay(d, today)) return today_;
+  if (sameDay(d, tomorrow)) return tomorrow_;
+  if (sameDay(d, yesterday)) return yesterday_;
+  return d.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
 function formatDayKey(dateStr: string): string {
@@ -94,12 +95,14 @@ function MatchRow({ match }: { match: Match }) {
 interface Props { leagues: LeagueConfig[]; year: number; selectedLeagueLabel: string | null; }
 
 export default function MatchesPage({ leagues, year, selectedLeagueLabel }: Props) {
+  const { t, lang } = useLang();
   const fetchableLeagues = leagues.filter(l => l.lolEsportsId);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');
   const leagueFilter = selectedLeagueLabel ?? 'all';
+  const locale = lang === 'fr' ? 'fr-FR' : 'en-US';
 
   useEffect(() => {
     setMatches([]); setLoading(true);
@@ -182,7 +185,7 @@ export default function MatchesPage({ leagues, year, selectedLeagueLabel }: Prop
   const groups = new Map<string, { label: string; matches: Match[] }>();
   for (const m of filtered) {
     const key = formatDayKey(m.startTime);
-    if (!groups.has(key)) groups.set(key, { label: formatDayLabel(m.startTime), matches: [] });
+    if (!groups.has(key)) groups.set(key, { label: formatDayLabel(m.startTime, t.today, t.tomorrow, t.yesterday, locale), matches: [] });
     groups.get(key)!.matches.push(m);
   }
   const dayGroups = Array.from(groups.entries());
@@ -194,7 +197,7 @@ export default function MatchesPage({ leagues, year, selectedLeagueLabel }: Prop
         <div className="matches-filters">
           {(['all', 'upcoming', 'completed'] as MatchFilter[]).map(f => (
             <button key={f} className={`mfilter-btn${matchFilter === f ? ' mfilter-btn--active' : ''}`} onClick={() => setMatchFilter(f)}>
-              {f === 'all' ? 'All' : f === 'upcoming' ? 'Upcoming' : 'Results'}
+              {f === 'all' ? t.all : f === 'upcoming' ? t.upcoming : t.results}
             </button>
           ))}
         </div>
@@ -223,7 +226,7 @@ export default function MatchesPage({ leagues, year, selectedLeagueLabel }: Prop
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="matches-empty">No matches found</div>
+        <div className="matches-empty">{t.noMatches}</div>
       ) : (
         <div className="matches-days">
           {dayGroups.map(([key, group]) => (
