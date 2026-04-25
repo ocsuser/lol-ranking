@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-LOG_FILE="/home/ubuntu/scrape.log"
-APP_DIR="/home/ubuntu/lol-ranking"
+LOG_FILE="/home/opc/scrape.log"
+APP_DIR="/home/opc/lol-ranking"
 WEB_DIR="/var/www/lol-ranking"
 
 log() {
