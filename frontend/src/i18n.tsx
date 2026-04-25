@@ -106,12 +106,15 @@ interface LangCtx { lang: Lang; t: Translations; setLang: (l: Lang) => void; }
 const LangContext = createContext<LangCtx>({ lang: 'en', t: T.en, setLang: () => {} });
 
 export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() =>
-    (localStorage.getItem('lang') as Lang) ?? 'en'
-  );
+  const [lang, setLangState] = useState<Lang>(() => {
+    const saved = (localStorage.getItem('lang') as Lang) ?? 'en';
+    document.documentElement.lang = saved;
+    return saved;
+  });
   function setLang(l: Lang) {
     setLangState(l);
     localStorage.setItem('lang', l);
+    document.documentElement.lang = l;
   }
   return (
     <LangContext.Provider value={{ lang, t: T[lang], setLang }}>

@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 import { useLang } from './i18n';
 import type { ExportData, Player } from './types';
 import { enrichPlayers } from './utils';
@@ -12,6 +12,32 @@ import MatchesPage from './components/MatchesPage';
 import { YEARS, type LeagueConfig, type SplitConfig } from './leagues';
 
 type Page = 'overview' | 'rankings' | 'rosters' | 'compare' | 'matches' | 'news' | 'about';
+
+type ScrapeStatus = 'idle' | 'running' | 'done' | 'error';
+
+function useScrape() {
+  const [status, setStatus] = useState<ScrapeStatus>('idle');
+  const [logs, setLogs]     = useState<string[]>([]);
+  const esRef               = useRef<EventSource | null>(null);
+
+  const run = () => {
+    if (status === 'running') return;
+    setStatus('running');
+    setLogs([]);
+    const es = new EventSource('http://localhost:3001/api/scrape');
+    esRef.current = es;
+    es.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'log')  setLogs(l => [...l, msg.text]);
+      if (msg.type === 'done') { setStatus(msg.ok ? 'done' : 'error'); es.close(); }
+    };
+    es.onerror = () => { setStatus('error'); es.close(); };
+  };
+
+  const reset = () => { esRef.current?.close(); setStatus('idle'); setLogs([]); };
+
+  return { status, logs, run, reset };
+}
 
 function useExportData(league: LeagueConfig) {
   const [data, setData]       = useState<ExportData | null>(null);
@@ -90,6 +116,8 @@ export default function App() {
   const [page, setPage]       = useState<Page>('overview');
   const [splitId, setSplitId] = useState<string | null>(null);
   const [navOpen, setNavOpen] = useState(false);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const scrape = useScrape();
   const defaultYear = YEARS[YEARS.length - 1];
   const [selection, setSelection] = useState({ year: defaultYear.year, leagueId: defaultYear.leagues[0].id });
 
@@ -203,6 +231,7 @@ export default function App() {
           <button
             className={`nav-item${page === 'rankings' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
             onClick={() => { league.available && setPage('rankings'); closeNav(); }}
+            aria-disabled={!league.available}
           >
             <span className="nav-item__icon">{NAV_ICONS.rankings}</span>
             <span className="nav-item__label">{t.rankings}</span>
@@ -211,6 +240,7 @@ export default function App() {
           <button
             className={`nav-item${page === 'rosters' && league.available ? ' nav-item--active' : ''}${!league.available ? ' nav-item--disabled' : ''}`}
             onClick={() => { league.available && setPage('rosters'); closeNav(); }}
+            aria-disabled={!league.available}
           >
             <span className="nav-item__icon">{NAV_ICONS.rosters}</span>
             <span className="nav-item__label">{t.rosters}</span>
@@ -270,7 +300,11 @@ export default function App() {
                       >
                         <span>{s.label}</span>
                         <span className="split-btn__chevron" style={{ opacity: activeParent ? 1 : 0.4 }}>
-                          {activeParent ? '▾' : '▸'}
+                          {activeParent ? (
+                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true"><path d="M1 3l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          ) : (
+                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true"><path d="M3 1l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          )}
                         </span>
                       </button>
                       {/* Children — shown only when parent is active */}
@@ -313,6 +347,41 @@ export default function App() {
         {/* Footer */}
         <div className="sidebar__footer">
           <div>Data · <strong className="sidebar__footer-source">gol.gg</strong></div>
+
+          <button
+            className={`scrape-btn scrape-btn--${scrape.status}`}
+            disabled={scrape.status === 'running'}
+            onClick={() => {
+              if (scrape.status === 'idle' || scrape.status === 'error') {
+                setLogsOpen(true);
+                scrape.run();
+              } else if (scrape.status === 'done') {
+                scrape.reset();
+                setLogsOpen(false);
+              }
+            }}
+          >
+            <span className="scrape-btn__dot" />
+            <span className="scrape-btn__label">
+              {scrape.status === 'running' ? 'Scraping…'
+               : scrape.status === 'done'  ? 'Done — reset'
+               : scrape.status === 'error' ? 'Error — retry'
+               : 'Scrape 2026'}
+            </span>
+          </button>
+
+          {(scrape.status === 'running' || scrape.status === 'done' || scrape.status === 'error') && scrape.logs.length > 0 && (
+            <div className="scrape-logs">
+              <button className="scrape-logs__toggle" onClick={() => setLogsOpen(o => !o)}>
+                {logsOpen ? '▴ hide logs' : '▾ show logs'}
+              </button>
+              {logsOpen && (
+                <div className="scrape-logs__body">
+                  {scrape.logs.map((l, i) => <div key={i}>{l}</div>)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </nav>
 
@@ -381,7 +450,16 @@ export default function App() {
               aria-label={currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               title={currentTheme === 'dark' ? 'Light mode' : 'Dark mode'}
             >
-              {currentTheme === 'dark' ? '☀' : '☾'}
+              {currentTheme === 'dark' ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8"/>
+                  <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
             </button>
           </div>
         </div>

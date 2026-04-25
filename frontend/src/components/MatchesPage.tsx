@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { LeagueConfig } from '../leagues';
 import { useLang } from '../i18n';
+import MatchScoreboard from './MatchScoreboard';
 
 const LS_KEY = '0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z';
 const LS_BASE = 'https://esports-api.lolesports.com/persisted/gw';
@@ -39,14 +40,21 @@ function formatTime(dateStr: string): string {
   return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
-function MatchRow({ match }: { match: Match }) {
+function MatchRow({ match, onClick }: { match: Match; onClick?: () => void }) {
   const isLive = match.state === 'inProgress';
   const isDone = match.state === 'completed';
   const aWin = isDone && match.teamA.wins > match.teamB.wins;
   const bWin = isDone && match.teamB.wins > match.teamA.wins;
 
   return (
-    <div className={`mrow${isLive ? ' mrow--live' : ''}${isDone ? ' mrow--done' : ''}`}>
+    <div
+      className={`mrow${isLive ? ' mrow--live' : ''}${isDone ? ' mrow--done' : ''}${isDone && onClick ? ' mrow--clickable' : ''}`}
+      onClick={isDone ? onClick : undefined}
+      role={isDone ? 'button' : undefined}
+      tabIndex={isDone ? 0 : undefined}
+      onKeyDown={isDone && onClick ? e => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+      aria-label={isDone ? `View scoreboard: ${match.teamA.code} vs ${match.teamB.code}` : undefined}
+    >
       {/* Left: time + league */}
       <div className="mrow__meta">
         <span className="mrow__time">
@@ -54,7 +62,7 @@ function MatchRow({ match }: { match: Match }) {
           {isLive ? 'LIVE' : formatTime(match.startTime)}
         </span>
         <div className="mrow__league">
-          {match.leagueLogo && <img src={match.leagueLogo} alt={match.leagueLabel} className="mrow__league-logo" />}
+          {match.leagueLogo && <img src={match.leagueLogo} alt={match.leagueLabel} className="mrow__league-logo" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
           <span className="mrow__league-label">{match.leagueLabel}</span>
         </div>
         <span className="mrow__block">{match.blockName}</span>
@@ -65,7 +73,7 @@ function MatchRow({ match }: { match: Match }) {
         {/* Team A */}
         <div className={`mrow__team mrow__team--a${aWin ? ' mrow__team--win' : ''}${bWin ? ' mrow__team--loss' : ''}`}>
           <span className="mrow__code">{match.teamA.code}</span>
-          <img src={match.teamA.image} alt={match.teamA.code} className="mrow__logo" />
+          <img src={match.teamA.image} alt={match.teamA.code} className="mrow__logo" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
 
         {/* Score / VS */}
@@ -84,10 +92,21 @@ function MatchRow({ match }: { match: Match }) {
 
         {/* Team B */}
         <div className={`mrow__team mrow__team--b${bWin ? ' mrow__team--win' : ''}${aWin ? ' mrow__team--loss' : ''}`}>
-          <img src={match.teamB.image} alt={match.teamB.code} className="mrow__logo" />
+          <img src={match.teamB.image} alt={match.teamB.code} className="mrow__logo" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           <span className="mrow__code">{match.teamB.code}</span>
         </div>
       </div>
+
+      {/* Scoreboard hint */}
+      {isDone && (
+        <div className="mrow__sb-hint">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+            <rect x="1" y="1" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1"/>
+            <path d="M3 3.5h4M3 5h2.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+          </svg>
+          SCOREBOARD
+        </div>
+      )}
     </div>
   );
 }
@@ -100,6 +119,7 @@ export default function MatchesPage({ leagues, year, selectedLeagueLabel }: Prop
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [matchFilter, setMatchFilter] = useState<MatchFilter>('all');
   const leagueFilter = selectedLeagueLabel ?? 'all';
   const locale = lang === 'fr' ? 'fr-FR' : 'en-US';
@@ -236,11 +256,23 @@ export default function MatchesPage({ leagues, year, selectedLeagueLabel }: Prop
                 <span className="matches-day__count">{group.matches.length}</span>
               </div>
               <div className="matches-day__list">
-                {group.matches.map(m => <MatchRow key={m.id} match={m} />)}
+                {group.matches.map(m => (
+                  <MatchRow key={m.id} match={m} onClick={m.state === 'completed' ? () => setSelectedMatch(m) : undefined} />
+                ))}
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {selectedMatch && (
+        <MatchScoreboard
+          matchId={selectedMatch.id}
+          teamA={{ id: '', name: selectedMatch.teamA.name, code: selectedMatch.teamA.code, image: selectedMatch.teamA.image, wins: selectedMatch.teamA.wins }}
+          teamB={{ id: '', name: selectedMatch.teamB.name, code: selectedMatch.teamB.code, image: selectedMatch.teamB.image, wins: selectedMatch.teamB.wins }}
+          startTime={selectedMatch.startTime}
+          onClose={() => setSelectedMatch(null)}
+        />
       )}
     </div>
   );

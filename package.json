@@ -11,16 +11,20 @@
     "player-images": "tsx scripts/fetch-player-images.ts",
     "scrape:2026": "tsx leagues/2026/lck-2026/scrape.ts && tsx leagues/2026/lpl-2026/scrape.ts && tsx leagues/2026/lec-2026/scrape.ts && tsx leagues/2026/lcs-2026/scrape.ts && tsx leagues/2026/first-stand-2026/scrape.ts && tsx leagues/2026/lfl-2026/scrape.ts",
     "scrape:2025": "tsx leagues/2025/lck-2025/scrape.ts && tsx leagues/2025/lpl-2025/scrape.ts && tsx leagues/2025/lec-2025/scrape.ts && tsx leagues/2025/lfl-2025/scrape.ts && tsx leagues/2025/first-stand-2025/scrape.ts && tsx leagues/2025/msi-2025/scrape.ts && tsx leagues/2025/worlds-2025/scrape.ts",
-    "dev": "npm run dev --prefix frontend"
+    "server": "tsx server.ts",
+    "dev": "concurrently -n server,vite -c cyan,yellow \"tsx server.ts\" \"npm run dev --prefix frontend\""
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0",
     "cheerio": "^1.2.0",
+    "express": "^5.2.1",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.0.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
+    "concurrently": "^9.2.1",
     "tsx": "^4.0.0",
     "typescript": "^5.5.0"
   }
