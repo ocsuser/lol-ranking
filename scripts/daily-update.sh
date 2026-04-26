@@ -24,7 +24,7 @@ npm run news
 
 log "Building frontend..."
 cd frontend
-npm run build
+npx vite build
 
 log "Deploying to nginx..."
 sudo cp -r dist/* "$WEB_DIR/"
