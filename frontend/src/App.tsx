@@ -38,19 +38,23 @@ function useScrape() {
   return { status, logs, run, reset };
 }
 
+const exportCache = new Map<string, ExportData>();
+
 function useExportData(league: LeagueConfig) {
-  const [data, setData]       = useState<ExportData | null>(null);
+  const [data, setData]       = useState<ExportData | null>(() => exportCache.get(league.id) ?? null);
   const [error, setError]     = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!league.available) { setData(null); setError(false); setLoading(false); return; }
+    const cached = exportCache.get(league.id);
+    if (cached) { setData(cached); setError(false); setLoading(false); return; }
     setData(null); setError(false); setLoading(true);
     fetch(`/leagues/${league.file}`)
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then((d: ExportData) => { setData(d); setLoading(false); })
+      .then((d: ExportData) => { exportCache.set(league.id, d); setData(d); setLoading(false); })
       .catch(() => { setError(true); setLoading(false); });
-  }, [league.id]);
+  }, [league.id, league.available]);
 
   return { data, error, loading };
 }

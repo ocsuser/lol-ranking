@@ -74,13 +74,13 @@ export function computeAllRatings(players: PlayerStats[]): LIRResult[] {
     const ps       = group.map(g => g.p);
     const medGames = median(ps.map(p => p.games));
 
-    // Pré-calcule les tableaux de valeurs pour chaque stat du groupe
+    // Pre-compute value arrays for each stat in the group
     const vals = (stat: keyof PlayerStats): number[] => ps.map(p => p[stat] as number);
 
     const pct     = (v: number, stat: keyof PlayerStats) => percentileRank(v, vals(stat));
     const pctInv  = (v: number, stat: keyof PlayerStats) => 100 - percentileRank(v, vals(stat));
 
-    // damageEfficiency = dmgPct / goldPct — pré-calculé pour tout le groupe
+    // damageEfficiency = dmgPct / goldPct — pre-computed for the whole group
     const efficiencies = ps.map(p => (p.goldPct > 0 ? p.dmgPct / p.goldPct : 0));
 
     for (const { idx, p } of group) {

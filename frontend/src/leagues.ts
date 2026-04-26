@@ -1,18 +1,18 @@
 export interface SplitConfig {
   id: string;
   label: string;
-  tournament: string;   // clé dans player.tournaments
-  children?: SplitConfig[]; // sous-sélecteur dropdown
+  tournament: string;   // key in player.tournaments
+  children?: SplitConfig[]; // sub-selector dropdown
 }
 
 export interface LeagueConfig {
   id: string;
-  label: string;       // affiché dans le sélecteur
+  label: string;       // shown in the league selector
   title: string;       // titre header (ex: "LCK 2026")
   file: string;        // chemin du JSON sous /leagues/
   available: boolean;  // false = "coming soon"
   logo?: string;       // chemin du logo sous /league-logos/
-  region?: string;     // tag région affiché dans la sidebar (ex: KR, CN, EU)
+  region?: string;     // region tag shown in sidebar (e.g. KR, CN, EU)
   lolEsportsId?: string; // ID LoLesports pour l'API matches
   splits?: SplitConfig[];
 }
@@ -56,22 +56,22 @@ export const YEARS: YearConfig[] = [
         lolEsportsId: '98767991314006698',
         splits: [
           { id: 'combined', label: 'Combined', tournament: 'LPL 2025' },
-          { id: 'split1comb', label: 'Split 1', tournament: 'LPL 2025 Split 1 Combined', children: [
+          { id: 'split1', label: 'Split 1', tournament: 'LPL 2025 Split 1 Combined', children: [
             { id: 'split1comb', label: 'Combined', tournament: 'LPL 2025 Split 1 Combined' },
-            { id: 'split1',     label: 'Season',   tournament: 'LPL 2025 Split 1'          },
+            { id: 'split1s',    label: 'Season',   tournament: 'LPL 2025 Split 1'          },
             { id: 'split1po',   label: 'Playoffs', tournament: 'LPL 2025 Split 1 Playoffs' },
           ]},
-          { id: 'split2comb', label: 'Split 2', tournament: 'LPL 2025 Split 2 Combined', children: [
+          { id: 'split2', label: 'Split 2', tournament: 'LPL 2025 Split 2 Combined', children: [
             { id: 'split2comb',  label: 'Combined',    tournament: 'LPL 2025 Split 2 Combined'    },
-            { id: 'split2',      label: 'Season',      tournament: 'LPL 2025 Split 2'             },
+            { id: 'split2s',     label: 'Season',      tournament: 'LPL 2025 Split 2'             },
             { id: 'split2po',    label: 'Playoffs',    tournament: 'LPL 2025 Split 2 Playoffs'    },
             { id: 'split2place', label: 'Placements',  tournament: 'LPL 2025 Split 2 Placements'  },
           ]},
-          { id: 'split3comb', label: 'Split 3', tournament: 'LPL 2025 Split 3 Combined', children: [
-            { id: 'split3comb',   label: 'Combined',        tournament: 'LPL 2025 Split 3 Combined' },
-            { id: 'split3',       label: 'Season',          tournament: 'LPL 2025 Split 3'          },
-            { id: 'regionals',    label: 'Regional Finals', tournament: 'LPL 2025 Regional Finals'  },
-            { id: 'grandfinals',  label: 'Grand Finals',    tournament: 'LPL 2025 Grand Finals'     },
+          { id: 'split3', label: 'Split 3', tournament: 'LPL 2025 Split 3 Combined', children: [
+            { id: 'split3comb',  label: 'Combined',        tournament: 'LPL 2025 Split 3 Combined' },
+            { id: 'split3s',     label: 'Season',          tournament: 'LPL 2025 Split 3'          },
+            { id: 'regionals',   label: 'Regional Finals', tournament: 'LPL 2025 Regional Finals'  },
+            { id: 'grandfinals', label: 'Grand Finals',    tournament: 'LPL 2025 Grand Finals'     },
           ]},
         ],
       },
@@ -192,9 +192,9 @@ export const YEARS: YearConfig[] = [
         lolEsportsId: '98767991314006698',
         splits: [
           { id: 'combined', label: 'Combined', tournament: 'LPL 2026' },
-          { id: 'split1comb', label: 'Split 1', tournament: 'LPL 2026 Split 1 Combined', children: [
+          { id: 'split1', label: 'Split 1', tournament: 'LPL 2026 Split 1 Combined', children: [
             { id: 'split1comb', label: 'Combined', tournament: 'LPL 2026 Split 1 Combined' },
-            { id: 'split1',     label: 'Season',   tournament: 'LPL 2026 Split 1'          },
+            { id: 'split1s',    label: 'Season',   tournament: 'LPL 2026 Split 1'          },
             { id: 'split1po',   label: 'Playoffs', tournament: 'LPL 2026 Split 1 Playoffs' },
           ]},
           { id: 'split2', label: 'Split 2', tournament: 'LPL 2026 Split 2' },
@@ -263,5 +263,3 @@ export const YEARS: YearConfig[] = [
   },
 ];
 
-// Rétrocompatibilité : LEAGUES pointe sur la première année
-export const LEAGUES = YEARS[0].leagues;

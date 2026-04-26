@@ -904,6 +904,89 @@ a:hover { opacity: 0.75; }
   padding: 9px 0;
 }
 
+/* Shared grid layout for head and data rows */
+.ranking-grid__head,
+.ranking-grid__row {
+  display: grid;
+  grid-template-columns: 44px 165px 90px 72px 72px 86px 72px 72px 72px 72px 86px 72px 72px 80px 86px;
+  align-items: center;
+}
+
+/* Toolbar */
+.ranking-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.ranking-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ranking-toolbar__count {
+  font-size: 11px;
+  color: var(--text-4);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* Scroll container */
+.ranking-grid-scroll {
+  overflow-x: auto;
+}
+
+/* Numeric cell (data) */
+.col-num {
+  padding: 0 8px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 16px;
+}
+
+/* Numeric header cell */
+.col-head {
+  padding: 0 8px;
+  text-align: right;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  user-select: none;
+  white-space: nowrap;
+  position: relative;
+}
+.col-head--active { color: var(--accent); }
+
+/* Label header cell (# and PLAYER) */
+.col-label {
+  padding: 0 8px;
+  text-align: left;
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Player cell */
+.col-player {
+  padding: 0 8px;
+  overflow: hidden;
+}
+
+/* Rank cell */
+.col-rank {
+  padding: 0 8px;
+  text-align: left;
+}
+
 /* Stripe alternée subtile */
 .ranking-grid__row:nth-child(even) {
   background: var(--grid-stripe);
