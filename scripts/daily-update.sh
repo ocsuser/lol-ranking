@@ -28,6 +28,7 @@ npx vite build
 
 log "Deploying to nginx..."
 sudo cp -r dist/* "$WEB_DIR/"
+sudo chcon -R -t httpd_sys_content_t "$WEB_DIR"
 
 cd ..
 
